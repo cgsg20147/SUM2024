@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ru" class="notranslate" translate="no">
+  <head>
+    <meta name="google" content="notranslate">    
+    <meta charset="utf-8">
+    <title>Drawing</title>
+  </head>
+  <body>
+    <canvas id="myCan" width="1900px" height="1000px"></canvas>
+    <script type="module">
+      import * as somegl from "./main.js";
+ 
+      window.addEventListener("load", () => {
+        somegl.initGL();
+        const draw = () => {
+          // drawing
+          somegl.render();
+ 
+          // animation register
+          window.requestAnimationFrame(draw);
+        };
+        draw();
+      });
+    </script>
+  </body>
+</html>

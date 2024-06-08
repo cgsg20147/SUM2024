@@ -2,14 +2,15 @@ import {mat4} from "./mat4.js"
 
 class _vec3 {
     constructor(x, y, z) {
-        if (x == undefined)
-            this.x = 0, this.y = 0, this.z = 0;
-        else if (typeof x == Object)
-            if (x.lenght == 3)
-                this.x = x[0], this.y = x[1], this.z = x[2];
+        this.x = 0, this.y = 0, this.z = 0;
+        if (typeof x == 'object')
+        {
+            this.x = x[0] || x.x, this.y = x[1] || x.y, this.z = x[2] || x.z;
+        }
         else if (y == undefined && z == undefined)
             this.x = x, this.y = x, this.z = x;
-        this.x = x, this.y = y, this.z = z;        
+        else
+            this.x = x, this.y = y, this.z = z;        
     }    
     len() {
         return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
@@ -18,7 +19,11 @@ class _vec3 {
         return this.x * this.x + this.y * this.y + this.z * this.z;
     }
     dot(v) {
-        return this.x * v.x + this.y * v.y + this.z * v.z;
+        if (typeof v == 'number' || typeof v == 'string')
+            return this.x * Number(v) + this.y * Number(v) + this.z * Number(v);
+        else if (typeof v == 'object')
+            return this.x * v.x + this.y * v.y + this.z * v.z;
+        return 0;
     }
     add(v) {
         if (typeof v == 'number' || typeof v == 'string' )
@@ -32,16 +37,20 @@ class _vec3 {
         let len = this.len();
         if (len == 1 || len == 0)
             return len;
-        return Math.sqrt(len);
+        return vec3(this.x, this.y, this.z).div(len);
     }
     cross(v) {
-        return vec3(this.y * v.z - this.z * v.y, v.x * this.z - v.z * this.x, this.z * v.y - this.y * v.x);
+        if (typeof v == 'object')
+            return vec3(this.y * v.z - this.z * v.y, v.x * this.z - v.z * this.x, this.z * v.y - this.y * v.x);
+        else if (typeof v == 'number' || typeof v == 'string')
+            return vec3(Number(v) * (this.y - this.z), Number(v) * (this.z - this.x), Number(v) * (this.z - this.y));
+        return vec3(this.x, this.y, this.z).transform(mat4().rotate(90, vec3(1, 1, 1)));
     }
     sub(v) {
         if (typeof v == 'number' || typeof v == 'string' )
             return vec3(this.x - v, this.y - v, this.z - v);
         else if (typeof v == 'object')
-            return vec3(this.x - v.x, this.y - v.y, this.z - v.z);
+            return vec3(this.x - (v.x || v[0]), this.y - (v.y || v[1]), this.z - (v.z || v[2]));
         return vec3(this.x, this.y, this.z);        
     }
     mul(n) {

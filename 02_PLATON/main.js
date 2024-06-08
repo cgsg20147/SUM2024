@@ -6,6 +6,7 @@ let
   gl,
   timeLoc,
   wLoc, WVPloc;
+  let indexBuffer;
 
 // OpenGL initialization function  
 export function initGL() {
@@ -25,7 +26,6 @@ export function initGL() {
   precision highp float;
   in vec3 InPosition;
   in vec4 InColor;
-  in vec3 InNormal;
 
   out vec3 DrawPos;
   out vec4 DrawColor;
@@ -38,6 +38,7 @@ export function initGL() {
   {
     gl_Position = WVP * vec4(InPosition, 1);
     DrawPos = vec3(W * vec4(InPosition, 1));
+    DrawColor = InColor;
   }
   `;
   let fs_txt =
@@ -51,12 +52,6 @@ export function initGL() {
 
   void main( void )
   {
-    int i;
-    /* vec2 A = vec2(DrawPos.x, DrawPos.y), B = vec2(0.43 + 0.08 * sin(Time + sin(Time * 0.47) * 3.47), cos(Time * 0.47) * 0.47 + 0.08 * sin(1.3 * Time));
-
-    for (i = 0; i < 255 && (A.x * A.x + A.y * A.y < 4.0); i++)
-        A = vec2(A.x * A.x - A.y * A.y, A.x * A.y + A.y * A.x) + B;
-    OutColor = vec4(float(i) / 6.0, float(i) / 47.0, float(i) / 1.47 - 50.83, 1.0); */
     OutColor = DrawColor;
   }
   `;
@@ -76,20 +71,20 @@ export function initGL() {
   const size = 1.0;
   const vertexes = [0.0, size, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, size, size, 0.0, 1.0, 0.0, 0.0, 1.0, size, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, size, size, size, 1.0, 0.0, 0.0, 1.0, size, 0.0, size, 1.0, 0.0, 0.0, 1.0, 0.0, size, size, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, size, 1.0, 0.0, 0.0, 1.0];
   const posLoc = gl.getAttribLocation(prg, "InPosition");
-  const indexes = [1, 2, 3, 4, 5, 6, 7, 8, -1, 2, 8, 4, 6, -1, 1, 7, 3, 5, -1]
+  const colLoc = gl.getAttribLocation(prg, "InColor");
+  const indexes = [0, 1, 2, 1, 2, 3, 2, 3, 4, 3, 4, 5, 4, 5, 6, 5, 6, 7, 6, 7, 0, 7, 0, 1, 0, 2, 4, 2, 4, 6, 1, 3, 5, 3, 5, 7];
   let vertexArray = gl.createVertexArray();
   gl.bindVertexArray(vertexArray);
-  let indexBuffer = gl.createBuffer();
+  indexBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indexes), gl.STATIC_DRAW);
   let vertexBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexes), gl.STATIC_DRAW);
-  let colLoc = gl.getAttribLocation(prg, "InColor");
-  gl.vertexAttribPointer(colLoc, 4, gl.FLOAT, false, 0, 12);
   if (posLoc != -1) {
-    gl.vertexAttribPointer(posLoc, 3, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(posLoc, 3, gl.FLOAT, false, 28, 0);
     gl.enableVertexAttribArray(posLoc);
+    gl.vertexAttribPointer(colLoc, 4, gl.FLOAT, false, 28, 12);
     gl.enableVertexAttribArray(colLoc);
   }
 
@@ -128,10 +123,9 @@ export function render() {
             date.getMilliseconds() / 1000;
     let m = mat4().rotateY(t);
     gl.uniform1f(timeLoc, t);
-    gl.uniformMatrix4fv(wLoc, false, new Float32Array([].concat(m)));
-    gl.uniformMatrix4fv(WVPloc, false, new Float32Array([].concat(camSet(vec3(1.0, 1.0, 1.0), vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0)))));
+    gl.uniformMatrix4fv(wLoc, false, new Float32Array(m.toArray()), 0, 16);
+    gl.uniformMatrix4fv(WVPloc, false, new Float32Array(camSet(vec3(5.0, 5.0, 5.0), vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0)).mul(m).toArray()), 0, 16);
   }
-  gl.drawArrays(gl.TRIANGLE_STRIP, 19, 4);
-} // End of 'render' function
-
-console.log("CGSG forever!!! mylib.js imported");
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+  gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_INT, 0);
+} // End of 'render' function.

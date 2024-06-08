@@ -3,14 +3,15 @@
 
     class _vec3 {
         constructor(x, y, z) {
-            if (x == undefined)
-                this.x = 0, this.y = 0, this.z = 0;
-            else if (typeof x == Object)
-                if (x.lenght == 3)
-                    this.x = x[0], this.y = x[1], this.z = x[2];
+            this.x = 0, this.y = 0, this.z = 0;
+            if (typeof x == 'object')
+            {
+                this.x = x[0] || x.x, this.y = x[1] || x.y, this.z = x[2] || x.z;
+            }
             else if (y == undefined && z == undefined)
                 this.x = x, this.y = x, this.z = x;
-            this.x = x, this.y = y, this.z = z;        
+            else
+                this.x = x, this.y = y, this.z = z;        
         }    
         len() {
             return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
@@ -19,7 +20,11 @@
             return this.x * this.x + this.y * this.y + this.z * this.z;
         }
         dot(v) {
-            return this.x * v.x + this.y * v.y + this.z * v.z;
+            if (typeof v == 'number' || typeof v == 'string')
+                return this.x * Number(v) + this.y * Number(v) + this.z * Number(v);
+            else if (typeof v == 'object')
+                return this.x * v.x + this.y * v.y + this.z * v.z;
+            return 0;
         }
         add(v) {
             if (typeof v == 'number' || typeof v == 'string' )
@@ -33,16 +38,20 @@
             let len = this.len();
             if (len == 1 || len == 0)
                 return len;
-            return Math.sqrt(len);
+            return vec3(this.x, this.y, this.z).div(len);
         }
         cross(v) {
-            return vec3(this.y * v.z - this.z * v.y, v.x * this.z - v.z * this.x, this.z * v.y - this.y * v.x);
+            if (typeof v == 'object')
+                return vec3(this.y * v.z - this.z * v.y, v.x * this.z - v.z * this.x, this.z * v.y - this.y * v.x);
+            else if (typeof v == 'number' || typeof v == 'string')
+                return vec3(Number(v) * (this.y - this.z), Number(v) * (this.z - this.x), Number(v) * (this.z - this.y));
+            return vec3(this.x, this.y, this.z).transform(mat4().rotate(90, vec3(1, 1, 1)));
         }
         sub(v) {
             if (typeof v == 'number' || typeof v == 'string' )
                 return vec3(this.x - v, this.y - v, this.z - v);
             else if (typeof v == 'object')
-                return vec3(this.x - v.x, this.y - v.y, this.z - v.z);
+                return vec3(this.x - (v.x || v[0]), this.y - (v.y || v[1]), this.z - (v.z || v[2]));
             return vec3(this.x, this.y, this.z);        
         }
         mul(n) {
@@ -79,9 +88,11 @@
     } //End of 'vec3' function
 
     class _mat4 {
+        //Matrix class construction.
         constructor( a00, a01, a02, a03, a10, a11, a12, a13, a20, a21, a22, a23, a30, a31, a32, a33 ) {
             this[0] = [1, 0, 0, 0], this[1] = [0, 1, 0, 0], this[2] = [0, 0, 1, 0], this[3] = [0, 0, 0, 1];
             if (typeof a00 == 'object')
+            {
                 if (a00.lenght == 16)
                     this[0][0] = a00[0], this[0][1] = a00[1], this[0][2] = a00[2], this[0][3] = a00[3], 
                     this[1][0] = a00[4], this[1][1] = a00[5], this[1][2] = a00[6], this[1][3] = a00[7], 
@@ -92,16 +103,19 @@
                     this[1][0] = a00[1][0], this[1][1] = a00[1][1], this[1][2] = a00[1][2], this[1][3] = a00[1][3], 
                     this[2][0] = a00[2][0], this[2][1] = a00[2][1], this[2][2] = a00[2][2], this[2][3] = a00[2][3], 
                     this[3][0] = a00[3][0], this[3][1] = a00[3][1], this[3][2] = a00[3][2], this[3][3] = a00[3][3];
-            else if (a01 == undefined)
+            }
+            else if (a00 != undefined && a01 == undefined)
                 this[0][0] = a00, this[0][1] = a00, this[0][2] = a00, this[0][3] = a00, 
                 this[1][0] = a00, this[1][1] = a00, this[1][2] = a00, this[1][3] = a00, 
                 this[2][0] = a00, this[2][1] = a00, this[2][2] = a00, this[2][3] = a00, 
                 this[3][0] = a00, this[3][1] = a00, this[3][2] = a00, this[3][3] = a00;            
-            this[0][0] = a00, this[0][1] = a01, this[0][2] = a02, this[0][3] = a03, 
-            this[1][0] = a10, this[1][1] = a11, this[1][2] = a12, this[1][3] = a13, 
-            this[2][0] = a20, this[2][1] = a21, this[2][2] = a22, this[2][3] = a23, 
-            this[3][0] = a30, this[3][1] = a31, this[3][2] = a32, this[3][3] = a33;            
-        }
+            else if (a33 != undefined)
+                this[0][0] = a00, this[0][1] = a01, this[0][2] = a02, this[0][3] = a03, 
+                this[1][0] = a10, this[1][1] = a11, this[1][2] = a12, this[1][3] = a13, 
+                this[2][0] = a20, this[2][1] = a21, this[2][2] = a22, this[2][3] = a23, 
+                this[3][0] = a30, this[3][1] = a31, this[3][2] = a32, this[3][3] = a33;            
+        }// End of matrix constructor
+        // Matrixes multiple function.
         mul(m) {
             if (typeof m == 'object')
                 return mat4(this[0][0] * m[0][0] + this[0][1] * m[1][0] + this[0][2] * m[2][0] + this[0][3] * m[3][0],
@@ -143,7 +157,8 @@
                         this[1][0], this[1][1], this[1][2], this[1][3],
                         this[2][0], this[2][1], this[2][2], this[2][3],
                         this[3][0], this[3][1], this[3][2], this[3][3]);
-        }
+        }//End of 'mul' function
+        //Translating matrix function
         translate(v) {
             if (typeof v == 'object' && v.x != undefined)
             {
@@ -173,7 +188,8 @@
                         this[1][0], this[1][1], this[1][2], this[1][3],
                         this[2][0], this[2][1], this[2][2], this[2][3],
                         this[3][0], this[3][1], this[3][2], this[3][3]);
-            }
+            }//End of 'translate' function.
+            //Matrix scaling function.
             scale(v) {
                 if (typeof v == 'object' && v.x != undefined)
                 {
@@ -203,88 +219,92 @@
                             this[1][0], this[1][1], this[1][2], this[1][3],
                             this[2][0], this[2][1], this[2][2], this[2][3],
                             this[3][0], this[3][1], this[3][2], this[3][3]);
-                }
+            }//End of 'scale' function
+            //Rotation matrix around axisX function.
             rotateX(angle) {
                 if (angle != undefined && angle != NaN && (typeof angle == 'number' || typeof angle == 'string'))
                     {
                         let si = Math.sin(Number(angle)), co = Math.cos(Number(angle));
-                        mat4(1, 0, 0, 0,
+                        let m = mat4(1, 0, 0, 0,
                                      0, co, si, 0,
                                      0, -si, co, 0,
                                      0, 0, 0, 1);
-                        return this.mul(mat4);
+                        return this.mul(m);
                     }
                 else if (typeof angle == 'object' && angle.lenght != 0)
                     {
                         for (let a of angle)
                             {
                                 let si = Math.sin(Number(a)), co = Math.cos(Number(a));
-                                mat4(1, 0, 0, 0,
+                                let m = mat4(1, 0, 0, 0,
                                             0, co, si, 0,
                                             0, -si, co, 0,
                                             0, 0, 0, 1);
-                                return this.mul(mat4);
+                                return this.mul(m);
                             }
                     }
                     return mat4(this[0][0], this[0][1], this[0][2], this[0][3],
                                 this[1][0], this[1][1], this[1][2], this[1][3],
                                 this[2][0], this[2][1], this[2][2], this[2][3],
                                 this[3][0], this[3][1], this[3][2], this[3][3]);
-                    }
+                }//End of 'rotateX' function
+            //Rotation matrix around axisY function.
             rotateY(angle) {
                 if (angle != undefined && angle != NaN && (typeof angle == 'number' || typeof angle == 'string'))
                     {
                         let si = Math.sin(Number(angle)), co = Math.cos(Number(angle));
-                        mat4(co, 0, -si, 0,
+                        let m = mat4(co, 0, -si, 0,
                                     0, 1, 0, 0,
                                     si, 0, co, 0,
                                     0, 0, 0, 1);
-                        return this.mul(mat4);
+                        return this.mul(m);
                     }
                 else if (typeof angle == 'object' && angle.lenght != 0)
                     {
                         for (let a of angle)
                             {
                                 let si = Math.sin(Number(a)), co = Math.cos(Number(a));
-                                mat4(co, 0, -si, 0,
+                                let m = mat4(co, 0, -si, 0,
                                              0, 1, 0, 0,
                                              si, 0, co, 0,
                                              0, 0, 0, 1);
-                                return this.mul(mat4);
+                                return this.mul(m);
                             }
                     }
                     return mat4(this[0][0], this[0][1], this[0][2], this[0][3],
                                 this[1][0], this[1][1], this[1][2], this[1][3],
                                 this[2][0], this[2][1], this[2][2], this[2][3],
                                 this[3][0], this[3][1], this[3][2], this[3][3]);
-                    }
+                    }//End of 'rotateY' function
+            //Rotation matrix around axisZ function.
             rotatez(angle) {
                 if (angle != undefined && angle != NaN && (typeof angle == 'number' || typeof angle == 'string'))
                     {
                         let si = Math.sin(Number(angle)), co = Math.cos(Number(angle));
-                        mat4(co, 0, -si, 0,
+                        let m = mat4(co, 0, -si, 0,
                                      0, 1, 0, 0,
                                      si, 0, co, 0,
                                      0, 0, 0, 1);
-                        return this.mul(mat4);
+                        return this.mul(m);
                     }
                 else if (typeof angle == 'object' && angle.lenght != 0)
                     {
                         for (let a of angle)
                             {
                                 let si = Math.sin(Number(a)), co = Math.cos(Number(a));
-                                mat4(co, 0, -si, 0,
+                                let m = mat4(co, 0, -si, 0,
                                              0, 1, 0, 0,
                                              si, 0, co, 0,
                                              0, 0, 0, 1);
-                                return this.mul(mat4);
+                                return this.mul(m);
                             }
                     }
                     return mat4(this[0][0], this[0][1], this[0][2], this[0][3],
                                 this[1][0], this[1][1], this[1][2], this[1][3],
                                 this[2][0], this[2][1], this[2][2], this[2][3],
                                 this[3][0], this[3][1], this[3][2], this[3][3]);
-                    }
+                    }//End of 'rotateZ' function
+            //Rotation matrix around axis function.
             rotate(angle, v) {
             if (angle != undefined && angle != NaN && (typeof angle == 'number' || typeof angle == 'string'))
                 {
@@ -314,13 +334,15 @@
                             this[1][0], this[1][1], this[1][2], this[1][3],
                             this[2][0], this[2][1], this[2][2], this[2][3],
                             this[3][0], this[3][1], this[3][2], this[3][3]);
-                }            
+                }//End of 'rotate' function
+            //Transposing matrix function.
             transpose() {
                 return mat4(this[0][0], this[1][0], this[2][0], this[3][0],
                             this[0][1], this[1][1], this[2][1], this[3][1],
                             this[0][2], this[1][2], this[2][2], this[3][2],
                             this[0][3], this[1][3], this[2][3], this[3][3]);
-            }
+            }//End of 'transpose' function.
+            //Inversing matrix function.
             inverse() {
                 let det = determ(this);
                 let m = mat4();
@@ -414,17 +436,19 @@
                                 this[2][0], this[2][1], this[2][2]) / det;
 
                 return m;
-            }
+            }//End of 'reverse' function.
+            //Building view matrix function.
             view(loc, at, up1) {
-                let dir = vec3(at).sub(vec3(loc)).normalize;
-                let right = vec3(dir).cross(vec3(up1)).normalize;
-                let up = vec3(right).cross(dir).normalize;
+                let dir = vec3(at).sub(vec3(loc)).normalize();
+                let right = vec3(dir).cross(vec3(up1)).normalize();
+                let up = vec3(right).cross(dir).normalize();
 
                 return mat4(right.x, up.x, -dir.x, 0,
                             right.y, up.y, -dir.y, 0,
                             right.z, up.z, -dir.z, 0,
                             -loc.dot(right), -loc.dot(right), -loc.dot(dir), 1);
-            }
+            }//End of 'view. function.
+            //Building ortho matrix function.
             ortho(left, right, bottom, top, near, far) {
                 if (far != undefined && far != NaN)
                     return mat4(2 / (right - left), 0, 0, 0,
@@ -437,7 +461,8 @@
                                 0, 0, 2 / (left[4] - left[5]), 0,
                                 (left[1] + left[0]) / (left[0] - right[1]), (left[3] + left[2]) / (left[2] - left[3]), (left[5] + left[4]) / (left[4] - left[5]), 1);
                 return mat4();
-            }
+            }//End of 'ortho' function.
+            //Building frustum matrix function.
             frustum(left, right, bottom, top, near, far) {
                 if (far != undefined && far != NaN)
                     return mat4(2 * near / (right - left), 0, 0, 0,
@@ -449,7 +474,14 @@
                                 0, 2 * left[4] / (left[3] - left[2]), 0, 0,
                                 (left[1] + left[0]) / (left[1] - left[0]), (left[3] + left[2]) / (left[3] - left[2]), (left[5] + left[4]) / (left[4] - left[5]), -1,
                                 0, 0, 2 * near * far / (near - far), 0);
-            }
+            }//End of 'frustum' function.
+            //Building array from matrix function.
+            toArray() {
+                return [this[0][0], this[0][1], this[0][2], this[0][3],
+                        this[1][0], this[1][1], this[1][2], this[1][3],
+                        this[2][0], this[2][1], this[2][2], this[2][3],
+                        this[3][0], this[3][1], this[3][2], this[3][3]];
+            }//End of 'toArray' function.
             }
 
     function determ( m ) {
@@ -496,6 +528,7 @@
       gl,
       timeLoc,
       wLoc, WVPloc;
+      let indexBuffer;
 
     // OpenGL initialization function  
     function initGL() {
@@ -515,7 +548,6 @@
   precision highp float;
   in vec3 InPosition;
   in vec4 InColor;
-  in vec3 InNormal;
 
   out vec3 DrawPos;
   out vec4 DrawColor;
@@ -528,6 +560,7 @@
   {
     gl_Position = WVP * vec4(InPosition, 1);
     DrawPos = vec3(W * vec4(InPosition, 1));
+    DrawColor = InColor;
   }
   `;
       let fs_txt =
@@ -541,12 +574,6 @@
 
   void main( void )
   {
-    int i;
-    /* vec2 A = vec2(DrawPos.x, DrawPos.y), B = vec2(0.43 + 0.08 * sin(Time + sin(Time * 0.47) * 3.47), cos(Time * 0.47) * 0.47 + 0.08 * sin(1.3 * Time));
-
-    for (i = 0; i < 255 && (A.x * A.x + A.y * A.y < 4.0); i++)
-        A = vec2(A.x * A.x - A.y * A.y, A.x * A.y + A.y * A.x) + B;
-    OutColor = vec4(float(i) / 6.0, float(i) / 47.0, float(i) / 1.47 - 50.83, 1.0); */
     OutColor = DrawColor;
   }
   `;
@@ -566,20 +593,20 @@
       const size = 1.0;
       const vertexes = [0.0, size, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, size, size, 0.0, 1.0, 0.0, 0.0, 1.0, size, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, size, size, size, 1.0, 0.0, 0.0, 1.0, size, 0.0, size, 1.0, 0.0, 0.0, 1.0, 0.0, size, size, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, size, 1.0, 0.0, 0.0, 1.0];
       const posLoc = gl.getAttribLocation(prg, "InPosition");
-      const indexes = [1, 2, 3, 4, 5, 6, 7, 8, -1, 2, 8, 4, 6, -1, 1, 7, 3, 5, -1];
+      const colLoc = gl.getAttribLocation(prg, "InColor");
+      const indexes = [0, 1, 2, 1, 2, 3, 2, 3, 4, 3, 4, 5, 4, 5, 6, 5, 6, 7, 6, 7, 0, 7, 0, 1, 0, 2, 4, 2, 4, 6, 1, 3, 5, 3, 5, 7];
       let vertexArray = gl.createVertexArray();
       gl.bindVertexArray(vertexArray);
-      let indexBuffer = gl.createBuffer();
+      indexBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indexes), gl.STATIC_DRAW);
       let vertexBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexes), gl.STATIC_DRAW);
-      let colLoc = gl.getAttribLocation(prg, "InColor");
-      gl.vertexAttribPointer(colLoc, 4, gl.FLOAT, false, 0, 12);
       if (posLoc != -1) {
-        gl.vertexAttribPointer(posLoc, 3, gl.FLOAT, false, 0, 0);
+        gl.vertexAttribPointer(posLoc, 3, gl.FLOAT, false, 28, 0);
         gl.enableVertexAttribArray(posLoc);
+        gl.vertexAttribPointer(colLoc, 4, gl.FLOAT, false, 28, 12);
         gl.enableVertexAttribArray(colLoc);
       }
 
@@ -616,13 +643,12 @@
                 date.getMilliseconds() / 1000;
         let m = mat4().rotateY(t);
         gl.uniform1f(timeLoc, t);
-        gl.uniformMatrix4fv(wLoc, false, new Float32Array([].concat(m)));
-        gl.uniformMatrix4fv(WVPloc, false, new Float32Array([].concat(camSet(vec3(1.0, 1.0, 1.0), vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0)))));
+        gl.uniformMatrix4fv(wLoc, false, new Float32Array(m.toArray()), 0, 16);
+        gl.uniformMatrix4fv(WVPloc, false, new Float32Array(camSet(vec3(5.0, 5.0, 5.0), vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0)).mul(m).toArray()), 0, 16);
       }
-      gl.drawArrays(gl.TRIANGLE_STRIP, 19, 4);
-    } // End of 'render' function
-
-    console.log("CGSG forever!!! mylib.js imported");
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+      gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_INT, 0);
+    } // End of 'render' function.
 
     exports.initGL = initGL;
     exports.render = render;

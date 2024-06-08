@@ -42,9 +42,9 @@
         }
         cross(v) {
             if (typeof v == 'object')
-                return vec3(this.y * v.z - this.z * v.y, v.x * this.z - v.z * this.x, this.z * v.y - this.y * v.x);
+                return vec3(this.y * v.z - this.z * v.y, v.x * this.z - v.z * this.x, this.x * v.y - this.y * v.x);
             else if (typeof v == 'number' || typeof v == 'string')
-                return vec3(Number(v) * (this.y - this.z), Number(v) * (this.z - this.x), Number(v) * (this.z - this.y));
+                return vec3(Number(v) * (this.y - this.z), Number(v) * (this.z - this.x), Number(v) * (this.x - this.y));
             return vec3(this.x, this.y, this.z).transform(mat4().rotate(90, vec3(1, 1, 1)));
         }
         sub(v) {
@@ -446,7 +446,7 @@
                 return mat4(right.x, up.x, -dir.x, 0,
                             right.y, up.y, -dir.y, 0,
                             right.z, up.z, -dir.z, 0,
-                            -loc.dot(right), -loc.dot(right), -loc.dot(dir), 1);
+                            -loc.dot(right), -loc.dot(up), loc.dot(dir), 1);
             }//End of 'view. function.
             //Building ortho matrix function.
             ortho(left, right, bottom, top, near, far) {
@@ -527,7 +527,7 @@
       canvas,
       gl,
       timeLoc,
-      wLoc, WVPloc;
+      wLoc, WVPloc, camLoc;
       let indexBuffer;
 
     // OpenGL initialization function  
@@ -540,7 +540,7 @@
 
       canvas = document.getElementById("myCan");
       gl = canvas.getContext("webgl2");
-      gl.clearColor(0.30, 0.47, 0.8, 1);
+      gl.clearColor(0.30, 0.47, 0.8, 1.0);
       
       // Shader creation
       let vs_txt =
@@ -570,11 +570,15 @@
   
   in vec3 DrawPos;
   in vec4 DrawColor;
+  uniform vec3 CamLoc;
   uniform float Time;
 
   void main( void )
   {
-    OutColor = DrawColor;
+    vec3 L = vec3(-10.0 * sin(Time), -10.0 * cos(Time) * sin(Time), -10.0 * cos(Time)), LC = vec3(1.0), color = vec3(DrawColor);
+    vec3 V = normalize(DrawPos - CamLoc);
+    float d = length(DrawPos - CamLoc), att = max(0.1, 1.0 / (0.3 * d));
+    OutColor = vec4(color * att, 1.0);
   }
   `;
       let
@@ -591,7 +595,7 @@
 
       // Vertex buffer creation
       const size = 1.0;
-      const vertexes = [0.0, size, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, size, size, 0.0, 1.0, 0.0, 0.0, 1.0, size, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, size, size, size, 1.0, 0.0, 0.0, 1.0, size, 0.0, size, 1.0, 0.0, 0.0, 1.0, 0.0, size, size, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, size, 1.0, 0.0, 0.0, 1.0];
+      const vertexes = [-size, size, -size, 1.0, 0.0, 0.0, 1.0, -size, -size, -size, 1.0, 0.0, 0.0, 1.0, size, size, -size, 1.0, 0.0, 0.0, 1.0, size, -size, -size, 1.0, 0.0, 0.0, 1.0, size, size, size, 1.0, 0.0, 0.0, 1.0, size, -size, size, 1.0, 0.0, 0.0, 1.0, -size, size, size, 1.0, 0.0, 0.0, 1.0, -size, -size, size, 1.0, 0.0, 0.0, 1.0];
       const posLoc = gl.getAttribLocation(prg, "InPosition");
       const colLoc = gl.getAttribLocation(prg, "InColor");
       const indexes = [0, 1, 2, 1, 2, 3, 2, 3, 4, 3, 4, 5, 4, 5, 6, 5, 6, 7, 6, 7, 0, 7, 0, 1, 0, 2, 4, 2, 4, 6, 1, 3, 5, 3, 5, 7];
@@ -614,7 +618,8 @@
       timeLoc = gl.getUniformLocation(prg, "Time");
       wLoc = gl.getUniformLocation(prg, "W");
       WVPloc = gl.getUniformLocation(prg, "WVP");
-
+      camLoc = gl.getUniformLocation(prg, "CamLoc");
+      gl.enable(gl.DEPTH_TEST);
       gl.useProgram(prg);
     }  // End of 'initGL' function               
 
@@ -642,9 +647,11 @@
                 date.getSeconds() +
                 date.getMilliseconds() / 1000;
         let m = mat4().rotateY(t);
+        let camloc = vec3(5.0, 3.0, 5.0);
         gl.uniform1f(timeLoc, t);
+        gl.uniform3fv(camLoc, new Float32Array([camloc.x, camloc.y, camloc.z]), 0, 3);
         gl.uniformMatrix4fv(wLoc, false, new Float32Array(m.toArray()), 0, 16);
-        gl.uniformMatrix4fv(WVPloc, false, new Float32Array(camSet(vec3(5.0, 5.0, 5.0), vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0)).mul(m).toArray()), 0, 16);
+        gl.uniformMatrix4fv(WVPloc, false, new Float32Array(m.mul(camSet(vec3(5.0, 3.0, 5.0), vec3(0.0, -1.0, 0.0), vec3(0.0, 1.0, 0.0))).toArray()), 0, 16);
       }
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
       gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_INT, 0);

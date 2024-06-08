@@ -361,7 +361,7 @@ class _mat4 {
             return mat4(right.x, up.x, -dir.x, 0,
                         right.y, up.y, -dir.y, 0,
                         right.z, up.z, -dir.z, 0,
-                        -loc.dot(right), -loc.dot(right), -loc.dot(dir), 1);
+                        -loc.dot(right), -loc.dot(up), loc.dot(dir), 1);
         }//End of 'view. function.
         //Building ortho matrix function.
         ortho(left, right, bottom, top, near, far) {

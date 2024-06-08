@@ -41,9 +41,9 @@ class _vec3 {
     }
     cross(v) {
         if (typeof v == 'object')
-            return vec3(this.y * v.z - this.z * v.y, v.x * this.z - v.z * this.x, this.z * v.y - this.y * v.x);
+            return vec3(this.y * v.z - this.z * v.y, v.x * this.z - v.z * this.x, this.x * v.y - this.y * v.x);
         else if (typeof v == 'number' || typeof v == 'string')
-            return vec3(Number(v) * (this.y - this.z), Number(v) * (this.z - this.x), Number(v) * (this.z - this.y));
+            return vec3(Number(v) * (this.y - this.z), Number(v) * (this.z - this.x), Number(v) * (this.x - this.y));
         return vec3(this.x, this.y, this.z).transform(mat4().rotate(90, vec3(1, 1, 1)));
     }
     sub(v) {

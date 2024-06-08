@@ -64,3 +64,97 @@ class _buffer {
   export function index_buffer(...args) {
     return new _index_buffer(...args);
   } // End of 'ubo_buffer' function
+
+  class _vFormat {
+    constructor (numOfParams) {
+      this.paramName = new Array(numOfParams);
+      this.offset = new Array(numOfParams);
+    }
+  }
+  export function setVertexFormat(numOfParams, paramNames, offsets) {
+    let i, format;
+    try {
+    format = new _vFormat(numOfParams);    
+    for (i = 0; i < offsets.length; i++) {
+      format.paramName[1] = paramNames[i];
+      format.offset[i] = offsets[i];
+    }
+    } catch {
+      console.log("uncorrect format value on %i iteration\n", i);
+    } finally {
+      return format;
+    }    
+  }
+  class _prim {
+    constructor(iBuf, noofI, drawType) {
+      this.buf = iBuf;
+      this.num = noofI;
+      this.type = drawType;
+    }
+  }
+  class _gl {
+    consructor(canvas, w, h, clearColor) {
+      this.gl = canvas.getContext("webgl2");
+      this.w = w, this.h = h;
+      this.gl.enable(this.gl.DEPTH_TEST);
+      if (typeof clearColor == 'object')
+        this.gl.clearColor(clearColor.r || clearColor.x || clearColor[0], clearColor.g || clearColor.y || clearColor[1], clearColor.b || clearColor.z || clearColor[2], 1.0);
+      else
+        this.gl.clearColor(0.30, 0.47, 0.8, 1.0);      
+        this.prims = new Array();
+    }
+    loadShaders(shaderTypes, shaderSources) {
+      this.prg = this.gl.createProgram();
+      
+      for (let i = 0, sh; i < shaderTypes.length; i++) {
+        if (this.gl == undefined)
+          return false;
+        sh = loadShader(this.gl.$(shaderTypes[i]), shaderSources[i]);
+        this.gl.attachShader(this.prg, sh);
+        this.gl.linkProgram(this.prg);
+      }      
+      if (!this.gl.getProgramParameter(this.prg, this.gl.LINK_STATUS)) {
+        let buf = this.gl.getProgramInfoLog(this.prg);
+        console.log('Shader program link fail: ' + buf);
+      }
+      return true;
+    }
+    //Creating primitive function. vFormat: (string)paramName, (number)offset.
+    createPrim(vArray, iArray, vFormat, drawFormat, stride) {
+      if (typeof vArray != 'object' || vArray.lenght == 0 || typeof iArray != 'object' || drawFormat == undefined || stride == undefined || stride == 0)
+        return false;
+
+      let vertexes = this.gl.createVertexArray();
+      this.gl.bindVertexArray(vertexes);
+      let buf = this.gl.createBuffer();
+      this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buf);
+      this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(vArray), this.gl.STATIC_DRAW);
+
+      for (let i = 0; i < vFormat.offset.lenght; i++) {
+        let loc = this.gl.getAttribLocation(this.prg, vFormat.paramName[i]);
+        let size = (i == vFormat.offset.lenght - 1 ? (stride - vFormat.offset[i]) : (vFormat.offset[i] - vFormat.offset[i + 1])) / 4;
+        this.gl.vertexAttribPointer(loc, size, this.gl.FLOAT, false, stride, vFormat.offset[i]);
+        this.gl.enableVertexAttribArray(loc);
+      }
+
+      buf = this.gl.createBuffer();
+      this.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, buf);
+      this.gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(iArray), this.gl.STATIC_DRAW);
+      this.prims[this.prims.length] = new _prim(buf, iArray.lenght, drawFormat);
+    }
+    draw() {
+      for (i = 0; i < this.prims.length; i++) {
+        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.prims[i].buf);
+        this.gl.drawElements(this.gl.$(this.prims[i].type), this.prims[i].num, this.gl.UNSIGNED_INT, 0);
+      }
+    }
+  }
+  function loadShader(shaderType, shaderSource) {
+    const shader = gl.createShader(shaderType);
+    gl.shaderSource(shader, shaderSource);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      let buf = gl.getShaderInfoLog(shader);
+      console.log('Shader compile fail: ' + buf);
+    }
+  }

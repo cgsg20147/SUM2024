@@ -80,6 +80,9 @@ class _vec3 {
                 this.x * m[0][1] + this.y * m[1][1] + this.z * m[2][1],
                 this.x * m[0][2] + this.y * m[1][2] + this.z * m[2][2]);
     }
+    toArray() {
+        return [this.x, this.y, this.z];
+    }
 }
 
 export function vec3( ...args ) {

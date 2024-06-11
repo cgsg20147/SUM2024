@@ -224,7 +224,7 @@ class _mat4 {
         if (angle != undefined && angle != NaN && (typeof angle == 'number' || typeof angle == 'string'))
             {
                 let si = Math.sin(Number(angle)), co = Math.cos(Number(angle));
-                v = vec3(v).normalize;
+                v = vec3(v).normalize();
 
                 return mat4(co + v.x * v.x * (1 - co), v.x * v.y * (1 - co) + v.z * si, v.x * v.z * (1 - co) - v.y * si, 0,
                             v.y * v.x * (1 - co) - v.y * si, co + v.y * v.y * (1 - co), v.y * v.z * (1 - co) + v.x * si, 0,
@@ -237,7 +237,7 @@ class _mat4 {
                 for (let a of angle)
                     {
                         let si = Math.sin(Number(a)), co = Math.cos(Number(a));
-                        v = vec3(v).normalize;
+                        v = vec3(v).normalize();
 
                         return mat4(co + v.x * v.x * (1 - co), v.x * v.y * (1 - co) + v.z * si, v.x * v.z * (1 - co) - v.y * si, 0,
                             v.y * v.x * (1 - co) - v.y * si, co + v.y * v.y * (1 - co), v.y * v.z * (1 - co) + v.x * si, 0,

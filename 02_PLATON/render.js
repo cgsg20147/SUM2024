@@ -1,70 +1,5 @@
-import {vec3} from "./math/vec3.js"
-class _buffer {
-    constructor(type, size) {
-      this.type = type;    // Buffer type (gl.***_BUFFER)
-      this.size = size;    // Buffer size in bytes
-      this.id = null;
-      if (size == 0 || type == undefined)
-        return;
-      this.id = gl.createBuffer();
-      gl.bindBuffer(type, this.id);
-      gl.bufferData(type, size, gl.STATIC_DRAW);
-    }
-    update(data) {
-    }
-  }
-  export function buffer(...args) {
-    return new _buffer(...args);
-  } // End of 'buffer' function
-  
-  
-  class _ubo_buffer extends _buffer {
-    constructor(name, size, bindPoint) {
-      super(gl.UNIFORM_BUFFER, size);
-      this.name = name;
-      this.bindPoint = bindPoint; // Buffer GPU binding point
-    }
-    apply (shd) {
-      if (shd == undefined || shd.id == undefined || shd.uniformBlocks[this.name] == undefined)
-        return;
-      gl.uniformBlockBinding(shd.id, shd.uniformBlocks[this.name].index, this.bindPoint);
-      gl.bindBufferBase(gl.UNIFORM_BUFFER, this.bindPoint, this.id);
-    }                        
-  }
-  export function ubo_buffer(...args) {
-    return new _ubo_buffer(...args);
-  } // End of 'ubo_buffer' function
-  
-  class _vertex_buffer {
-    constructor(prg, vArray) {
-        let vertexArray = gl.createVertexArray();
-        gl.bindVertexArray(vertexArray);        
-        this.vBuf = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vBuf);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vArray), gl.STATIC_DRAW);
-        let posLoc = gl.getAttribLocation(prg, "InPosition");
-        gl.vertexAttribPointer(posLoc, 3, gl.FLOAT, false, 0, 0);
-        let colLoc = gl.getAttribLocation(prg, "InColor");
-        gl.vertexAttribPointer(colLoc, 4, gl.FLOAT, false, 0, 12);
-        gl.enableVertexAttribArray(posLoc);
-        gl.enableVertexAttribArray(colLoc);
-    }
-  }
-  export function vertex_buffer(...args) {
-    return new _vertex_buffer(...args);
-  } // End of 'vertex_buffer' function
-          
-  class _index_buffer extends _buffer {
-    constructor(iArray) {
-      const n = iArray.length;
-      super(gl.ELEMENT_ARRAY_BUFFER, n * 4);
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.id);
-      gl.bufferSubData(this.type, 0, new Uint32Array(iArray), 0);
-    }
-  }
-  export function index_buffer(...args) {
-    return new _index_buffer(...args);
-  } // End of 'ubo_buffer' function
+import {vec3} from "./mth/vec3.js"
+import { inputResponse, camSet  } from "./drawing.js";
 
   class _vFormat {
     constructor (numOfParams) {
@@ -86,36 +21,89 @@ class _buffer {
       return format;
     }    
   }
-
-  function autoNormals(v, ind) {
-    let norm = new Array(ind.length);
-    for (let i in norm) {
-      i = 0;
+  class _vertex {
+    constructor(pos, col, norm, tex) {
+      this.pos = pos;
+      this.col = col;
+      this.norm = norm;
+      this.tex = tex;
+    }
+    toArray() {
+      if (typeof this.pos != 'object')
+        return null;
+      let i = this.pos.length, iscol = false, isnorm = false, istex = false;
+      this.stride = 12;
+      if (typeof this.col == 'object') {
+        iscol = true;
+        i += this.col.length;
+        this.stride += 16;
+      }
+      if (typeof this.norm == 'object') {
+        isnorm = true;
+        i += this.norm.length;
+        this.stride += 12;
+      }
+      if (typeof this.tex == 'object') {
+        istex = true;
+        i += this.tex.length;
+        this.stride += 8;
+      }
+      this.vArray = new Array(i);
+      for (let j = 0, k = 0; j + 1 < i;) {
+        this.vArray[j++] = this.pos[k * 3];
+        this.vArray[j++] = this.pos[k * 3 + 1];
+        this.vArray[j++] = this.pos[k * 3 + 2];
+        if (iscol) {
+          this.vArray[j++] = this.col[k * 4];
+          this.vArray[j++] = this.col[k * 4 + 1];
+          this.vArray[j++] = this.col[k * 4 + 2];
+          this.vArray[j++] = this.col[k * 4 + 3];
+        }
+        if (isnorm) {
+          this.vArray[j++] = this.norm[k * 3];
+          this.vArray[j++] = this.norm[k * 3 + 1];
+          this.vArray[j++] = this.norm[k * 3 + 2];
+        }
+        if (istex) {
+          this.vArray[j++] = this.tex[k * 2];
+          this.vArray[j++] = this.tex[k * 2 + 1];
+        }
+        k++;
+      }
+      return this.vArray;
+    }
+  }
+  export function setVertex(...args) {
+    return new _vertex(...args);
+  }
+  export function autoNormals(pos, ind) {
+    let norm = new Array(pos.length);
+    for (let i = 0; i < pos.length; i++) {
+      norm[i] = 0.0;
     }
     for (let i = 0; i < ind.length; i += 3) {
-      let n0 = ind[i], n1 = ind[i + 1], n2 = n2 = ind[i + 2];
-      let p0 = vec3(v[n0].pos), p1 = vec3(v[n0].pos), p2 = vec3(v[n0].pos);
+      let n0 = ind[i], n1 = ind[i + 1], n2 = ind[i + 2];
+      let p0 = vec3(pos[n0 * 3], pos[n0 * 3 + 1], pos[n0 * 3 + 2]), p1 = vec3(pos[n1 * 3], pos[n1 * 3 + 1], pos[n1 * 3 + 2]), p2 = vec3(pos[n2 * 3], pos[n2 * 3 + 1], pos[n2 * 3 + 2]);
       let n = p1.sub(p0).cross(p2.sub(p0)).normalize();
-      v[n0].norm = v[n0].norm.add(n);
-      v[n1].norm = v[n1].norm.add(n);
-      v[n2].norm = v[n2].norm.add(n);
+      let a0 = vec3(norm[n0 * 3], norm[n0 * 3 + 1], norm[n0 * 3 + 2]).add(n).toArray(), a1 = vec3(norm[n1 * 3], norm[n1 * 3 + 1], norm[n1 * 3 + 2]).add(n).toArray(), 
+      a2 = vec3(norm[n2 * 3], norm[n2 * 3 + 1], norm[n2 * 3 + 2]).add(n).toArray();
+      norm[n0 * 3] = a0[0];
+      norm[n0 * 3 + 1] = a0[1];
+      norm[n0 * 3 + 2] = a0[2];
+      norm[n1 * 3] = a1[0];
+      norm[n1 * 3 + 1] = a1[1];
+      norm[n1 * 3 + 2] = a1[2];
+      norm[n2 * 3] = a2[0];
+      norm[n2 * 3 + 1] = a2[1];
+      norm[n2 * 3 + 2] = a2[2];
    }
-   for (let i of v) {
-    i.norm.normalize();
+   for (let i = 0; i < norm.length / 3; i++) {
+    let n = vec3(norm[i * 3], norm[i * 3 + 1], norm[i * 3 + 2]).normalize().toArray();
+    norm[i * 3] = n[0];
+    norm[i * 3 + 1] = n[1];
+    norm[i * 3 + 2] = n[2];
    }
-  }
-  export function setVertexArray(vFormat, args, noofV) {
-    let vArray = new Array();
-
-    for (let i = 0; i < noofV; i++) {
-      for (let j = 0, offset = 0; j < vFormat.length; j++) {
-        for (let k = 0; k < vFormat[j].offset / 4; k++) {
-          vArray[i * vFormat.length + offset + k] = vFormat[j].paramName == "InPosition" ? args[i].pos.toArray()[k] : vFormat[j].paramName == "InColor" ? args[i].col.toArray()[k] :
-            vFormat[j].paramName == "InNormal" ? args[i].norm.toArray()[k] : vFormat[j].paramName == "InTexCoord" ? args[i].tex.toArray()[k] : 0.0;
-        }          
-        offset += vFormat[j].offset / 4;
-      }
-    }
+   return norm;
   }
   class _prim {
     constructor(iBuf, noofI, drawType) {
@@ -135,6 +123,7 @@ class _buffer {
         this.gl.clearColor(0.30, 0.47, 0.8, 1.0);      
       this.prims = new Array();
       this.uniforms = new Array();
+      this.cam = camSet(vec3(5, 5, 5), vec3(0, 0, 0), vec3(0, 1, 0), w, h, 0.1, 0.1, 300);
     }
     loadShaders(shaderTypes, shaderSources) {
       this.prg = this.gl.createProgram();
@@ -167,6 +156,8 @@ class _buffer {
 
       for (let i = 0; i < vFormat.offset.length; i++) {
         let loc = this.gl.getAttribLocation(this.prg, vFormat.paramName[i]);
+        if (loc == -1)
+          continue;
         let size = (i == vFormat.offset.length - 1 ? (stride - vFormat.offset[i]) : (vFormat.offset[i + 1] - vFormat.offset[i])) / 4;
         this.gl.vertexAttribPointer(loc, size, this.gl.FLOAT, false, stride, vFormat.offset[i]);
         this.gl.enableVertexAttribArray(loc);

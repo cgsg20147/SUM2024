@@ -36,7 +36,7 @@ class _vec3 {
     normalize() {
         let len = this.len();
         if (len == 1 || len == 0)
-            return len;
+            return vec3(this.x, this.y, this.z);
         return vec3(this.x, this.y, this.z).div(len);
     }
     cross(v) {
@@ -50,7 +50,7 @@ class _vec3 {
         if (typeof v == 'number' || typeof v == 'string' )
             return vec3(this.x - v, this.y - v, this.z - v);
         else if (typeof v == 'object')
-            return vec3(this.x - (v.x || v[0]), this.y - (v.y || v[1]), this.z - (v.z || v[2]));
+            return vec3(this.x - v.x, this.y - v.y, this.z - v.z);
         return vec3(this.x, this.y, this.z);        
     }
     mul(n) {

@@ -1,4 +1,4 @@
-module.exports = {
+export default {
     input: "./main.js",
     output: {
         dir: "output",

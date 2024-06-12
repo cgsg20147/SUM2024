@@ -37,7 +37,7 @@
         normalize() {
             let len = this.len();
             if (len == 1 || len == 0)
-                return len;
+                return vec3(this.x, this.y, this.z);
             return vec3(this.x, this.y, this.z).div(len);
         }
         cross(v) {
@@ -51,7 +51,7 @@
             if (typeof v == 'number' || typeof v == 'string' )
                 return vec3(this.x - v, this.y - v, this.z - v);
             else if (typeof v == 'object')
-                return vec3(this.x - (v.x || v[0]), this.y - (v.y || v[1]), this.z - (v.z || v[2]));
+                return vec3(this.x - v.x, this.y - v.y, this.z - v.z);
             return vec3(this.x, this.y, this.z);        
         }
         mul(n) {
@@ -315,7 +315,7 @@
                     v = vec3(v).normalize();
 
                     return mat4(co + v.x * v.x * (1 - co), v.x * v.y * (1 - co) + v.z * si, v.x * v.z * (1 - co) - v.y * si, 0,
-                                v.y * v.x * (1 - co) - v.y * si, co + v.y * v.y * (1 - co), v.y * v.z * (1 - co) + v.x * si, 0,
+                                v.y * v.x * (1 - co) - v.z * si, co + v.y * v.y * (1 - co), v.y * v.z * (1 - co) + v.x * si, 0,
                                 v.z * v.x * (1 - co) + v.y * si, v.z * v.y * (1 - co) - v.x * si, co + v.z * v.z * (1 - co), 0,
                                 0, 0, 0, 1);
 
@@ -511,18 +511,35 @@
         return new _mat4(...args);
     }//End of 'mat4' function
 
-    function camSet(loc, at, up) {
-        let view = mat4().view(loc, at, up);
-
-        return view.mul(projSet());
+    class _cam {
+        constructor(loc, at, up, w, h, projSize, projDist, projFarClip) {
+            this.projDist = projDist;
+            this.projSize = projSize;
+            this.projFarClip = projFarClip;
+            this.w = w;
+            this.h = h;
+            this.set(loc, at, up);
+        }
+        set(loc, at, up) {
+            this.view = mat4().view(loc, at, up);
+            this.loc = vec3(loc);
+            this.at = vec3(at);
+            this.up = vec3(this.view[0][0], this.view[1][0], this.view[2][0]);
+            this.right = vec3(this.view[0][1], this.view[1][1], this.view[2][1]);
+            this.dir = vec3(-this.view[0][2], -this.view[1][2], -this.view[2][2]);
+            this.vp = this.view.mul(projSet(this.w, this.h));
+        }
+      }
+    function camSet(...args) {
+        return new _cam(...args);
     }
-    function projSet() {
+    function projSet(w, h) {
         let rx = window.projSize, ry = window.projSize;
 
-        if (window.frameW > window.frameH)
-            rx *= window.frameW / window.frameH;
+        if (w > h)
+            rx *= w / h;
         else
-            ry *= window.frameH / window.frameW;
+            ry *= h / w;
         return mat4().frustum(-rx / 2, rx / 2, -ry / 2, ry / 2, window.projDist, window.projFarClip);
     }
 
@@ -546,6 +563,90 @@
           return format;
         }    
       }
+      class _vertex {
+        constructor(pos, col, norm, tex) {
+          this.pos = pos;
+          this.col = col;
+          this.norm = norm;
+          this.tex = tex;
+        }
+        toArray() {
+          if (typeof this.pos != 'object')
+            return null;
+          let i = this.pos.length, iscol = false, isnorm = false, istex = false;
+          this.stride = 12;
+          if (typeof this.col == 'object') {
+            iscol = true;
+            i += this.col.length;
+            this.stride += 16;
+          }
+          if (typeof this.norm == 'object') {
+            isnorm = true;
+            i += this.norm.length;
+            this.stride += 12;
+          }
+          if (typeof this.tex == 'object') {
+            istex = true;
+            i += this.tex.length;
+            this.stride += 8;
+          }
+          this.vArray = new Array(i);
+          for (let j = 0, k = 0; j + 1 < i;) {
+            this.vArray[j++] = this.pos[k * 3];
+            this.vArray[j++] = this.pos[k * 3 + 1];
+            this.vArray[j++] = this.pos[k * 3 + 2];
+            if (iscol) {
+              this.vArray[j++] = this.col[k * 4];
+              this.vArray[j++] = this.col[k * 4 + 1];
+              this.vArray[j++] = this.col[k * 4 + 2];
+              this.vArray[j++] = this.col[k * 4 + 3];
+            }
+            if (isnorm) {
+              this.vArray[j++] = this.norm[k * 3];
+              this.vArray[j++] = this.norm[k * 3 + 1];
+              this.vArray[j++] = this.norm[k * 3 + 2];
+            }
+            if (istex) {
+              this.vArray[j++] = this.tex[k * 2];
+              this.vArray[j++] = this.tex[k * 2 + 1];
+            }
+            k++;
+          }
+          return this.vArray;
+        }
+      }
+      function setVertex(...args) {
+        return new _vertex(...args);
+      }
+      function autoNormals(pos, ind) {
+        let norm = new Array(pos.length);
+        for (let i = 0; i < pos.length; i++) {
+          norm[i] = 0.0;
+        }
+        for (let i = 0; i < ind.length; i += 3) {
+          let n0 = ind[i], n1 = ind[i + 1], n2 = ind[i + 2];
+          let p0 = vec3(pos[n0 * 3], pos[n0 * 3 + 1], pos[n0 * 3 + 2]), p1 = vec3(pos[n1 * 3], pos[n1 * 3 + 1], pos[n1 * 3 + 2]), p2 = vec3(pos[n2 * 3], pos[n2 * 3 + 1], pos[n2 * 3 + 2]);
+          let n = p1.sub(p0).cross(p2.sub(p0)).normalize();
+          let a0 = vec3(norm[n0 * 3], norm[n0 * 3 + 1], norm[n0 * 3 + 2]).add(n).toArray(), a1 = vec3(norm[n1 * 3], norm[n1 * 3 + 1], norm[n1 * 3 + 2]).add(n).toArray(), 
+          a2 = vec3(norm[n2 * 3], norm[n2 * 3 + 1], norm[n2 * 3 + 2]).add(n).toArray();
+          norm[n0 * 3] = a0[0];
+          norm[n0 * 3 + 1] = a0[1];
+          norm[n0 * 3 + 2] = a0[2];
+          norm[n1 * 3] = a1[0];
+          norm[n1 * 3 + 1] = a1[1];
+          norm[n1 * 3 + 2] = a1[2];
+          norm[n2 * 3] = a2[0];
+          norm[n2 * 3 + 1] = a2[1];
+          norm[n2 * 3 + 2] = a2[2];
+       }
+       for (let i = 0; i < norm.length / 3; i++) {
+        let n = vec3(norm[i * 3], norm[i * 3 + 1], norm[i * 3 + 2]).normalize().toArray();
+        norm[i * 3] = n[0];
+        norm[i * 3 + 1] = n[1];
+        norm[i * 3 + 2] = n[2];
+       }
+       return norm;
+      }
       class _prim {
         constructor(iBuf, noofI, drawType) {
           this.buf = iBuf;
@@ -564,6 +665,7 @@
             this.gl.clearColor(0.30, 0.47, 0.8, 1.0);      
           this.prims = new Array();
           this.uniforms = new Array();
+          this.cam = camSet(vec3(5, 5, 5), vec3(0, 0, 0), vec3(0, 1, 0), w, h, 0.1, 0.1, 300);
         }
         loadShaders(shaderTypes, shaderSources) {
           this.prg = this.gl.createProgram();
@@ -596,6 +698,8 @@
 
           for (let i = 0; i < vFormat.offset.length; i++) {
             let loc = this.gl.getAttribLocation(this.prg, vFormat.paramName[i]);
+            if (loc == -1)
+              continue;
             let size = (i == vFormat.offset.length - 1 ? (stride - vFormat.offset[i]) : (vFormat.offset[i + 1] - vFormat.offset[i])) / 4;
             this.gl.vertexAttribPointer(loc, size, this.gl.FLOAT, false, stride, vFormat.offset[i]);
             this.gl.enableVertexAttribArray(loc);
@@ -680,18 +784,20 @@
   precision highp float;
   in vec3 InPosition;
   in vec4 InColor;
-
+  in vec3 InNormal;
   out vec3 DrawPos;
   out vec4 DrawColor;
-
+  out vec3 DrawNormal;
   uniform float Time;
   uniform mat4 W;
   uniform mat4 WVP;
+
 
   void main( void )
   {
     gl_Position = WVP * vec4(InPosition, 1.0);
     DrawPos = vec3(W * vec4(InPosition, 1.0));
+    DrawNormal = mat3(transpose(inverse(W))) * InNormal;
     DrawColor = InColor;
   }
   `;
@@ -702,30 +808,48 @@
   
   in vec3 DrawPos;
   in vec4 DrawColor;
+  in vec3 DrawNormal;
   uniform vec3 CamLoc;
   uniform float Time;
 
   void main( void )
   {
-    vec3 L = vec3(-10.0 * sin(Time), -10.0 * cos(Time) * sin(Time), -10.0 * cos(Time)), LC = vec3(1.0), color = vec3(DrawColor);
+    vec3 L = vec3(-10.0 * sin(Time), -10.0 * cos(Time) * sin(Time), -10.0 * cos(Time)), LC = vec3(cos(sin(Time * 0.017) * Time * 0.07), cos(Time * 0.13) * sin(Time * 0.18), sin(cos(Time * 0.014) * Time * 0.11)), color = vec3(DrawColor);
     vec3 V = normalize(DrawPos - CamLoc);
     float d = length(DrawPos - CamLoc), att = max(0.1, 1.0 / (0.3 * d));
+    vec3 N = faceforward(DrawNormal, V, DrawNormal);
+    color += max(0.0, dot(N, L)) * 0.147 * LC;
+    vec3 R = reflect(V, N);
+    color += pow(max(0.0, dot(R, L)), 0.47) * 0.247 * LC;
     OutColor = vec4(color * att, 1.0);
-  }
+    }
   `;
       gl.loadShaders([gl.gl.VERTEX_SHADER, gl.gl.FRAGMENT_SHADER], sh);
       
       // Vertex buffer creation
       const size = 1.0;
-      const vertexes = [-size, size, -size, 1.0, 0.0, 0.0, 1.0, -size, -size, -size, 1.0, 0.0, 0.0, 1.0, size, size, -size, 1.0, 0.0, 0.0, 1.0, size, -size, -size, 1.0, 0.0, 0.0, 1.0, 
-        size, size, size, 1.0, 0.0, 0.0, 1.0, size, -size, size, 1.0, 0.0, 0.0, 1.0, -size, size, size, 1.0, 0.0, 0.0, 1.0, -size, -size, size, 1.0, 0.0, 0.0, 1.0,
-        -size, size, -size, 1.0, 0.0, 0.0, 1.0, -size, -size, -size, 1.0, 0.0, 0.0, 1.0, size, size, -size, 1.0, 0.0, 0.0, 1.0, size, -size, -size, 1.0, 0.0, 0.0, 1.0, 
-        size, size, size, 1.0, 0.0, 0.0, 1.0, size, -size, size, 1.0, 0.0, 0.0, 1.0, -size, size, size, 1.0, 0.0, 0.0, 1.0, -size, -size, size, 1.0, 0.0, 0.0, 1.0,
-        -size, size, -size, 1.0, 0.0, 0.0, 1.0, -size, -size, -size, 1.0, 0.0, 0.0, 1.0, size, size, -size, 1.0, 0.0, 0.0, 1.0, size, -size, -size, 1.0, 0.0, 0.0, 1.0, 
-        size, size, size, 1.0, 0.0, 0.0, 1.0, size, -size, size, 1.0, 0.0, 0.0, 1.0, -size, size, size, 1.0, 0.0, 0.0, 1.0, -size, -size, size, 1.0, 0.0, 0.0, 1.0];
-      const indexes = [0, 1, 2, 1, 2, 3, 4, 5, 6, 5, 6, 7, 8, 9, 14, 9, 14, 15, 10, 11, 12, 11, 12, 13, 16, 18, 22, 18, 22, 20, 17, 19, 23, 19, 23, 21];
-      gl.createPrim(vertexes, indexes, setVertexFormat(2, ["InPosition", "InColor"], [0, 12]), gl.gl.TRIANGLES, 28);
-
+      let pos = [-size, size, -size, -size, -size, -size, size, size, -size, size, -size, -size, 
+        size, size, size, size, -size, size, -size, size, size, -size, -size, size,
+        -size, size, -size, -size, -size, -size, size, size, -size, size, -size, -size, 
+        size, size, size, size, -size, size, -size, size, size, -size, -size, size,
+        -size, size, -size, -size, -size, -size, size, size, -size, size, -size, -size, 
+        size, size, size, size, -size, size, -size, size, size, -size, -size, size,];
+      let col = [1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 
+        1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 
+        1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0];
+      let ind = [0, 1, 2, 3, 2, 1, 4, 5, 6, 7, 6, 5, 8, 9, 14, 15, 14, 9, 10, 11, 12, 13, 12, 11, 16, 18, 22, 20, 22, 18, 17, 19, 23, 21, 23, 19];
+      let norm = autoNormals(pos, ind);
+      let vertexes = setVertex(pos, col, norm).toArray();
+      let format = setVertexFormat(3, ["InPosition", "InColor", "InNormal"], [0, 12, 28]);
+      gl.createPrim(vertexes, ind, format, gl.gl.TRIANGLES, 40);
+      pos = [0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -1.0, 0.0,
+              0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -1.0, 0.0,
+              0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -1.0, 0.0,
+              0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -1.0, 0.0];
+      ind = [0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 7, 10, 12, 16, 15, 13, 14, 17, 18, 22, 19, 20, 21, 23];
+      norm = autoNormals(pos, ind);
+      vertexes = setVertex(pos, col, norm).toArray();
+      gl.createPrim(vertexes, ind, format, gl.gl.TRIANGLES, 40);
     }  // End of 'initGL' function               
 
     // Main render frame function
@@ -740,7 +864,7 @@
         gl.subUniformData("Time", 0, t, "1f");
         gl.subUniformData("CamLoc", 3, camloc.toArray(), "3fv");
         gl.subUniformData("W", 16, m.toArray(), "m4fv");
-        gl.subUniformData("WVP", 16, m.mul(camSet(vec3(5.0, 3.0, 5.0), vec3(0.0, -1.0, 0.0), vec3(0.0, 1.0, 0.0))).toArray(), "m4fv");
+        gl.subUniformData("WVP", 16, m.mul(gl.cam.vp).toArray(), "m4fv");
       }
       gl.draw();
     } // End of 'render' function.

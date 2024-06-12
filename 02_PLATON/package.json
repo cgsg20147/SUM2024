@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "name": "02_platon",
   "version": "1.0.0",
   "main": "main.js",

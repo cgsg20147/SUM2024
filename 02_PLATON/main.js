@@ -1,6 +1,6 @@
 import { camSet } from "./drawing.js";
 import { mat4, vec3 } from "./mth/mat4.js";
-import {glInit, setVertexFormat} from "./render.js"
+import {glInit, setVertexFormat, setVertex, autoNormals} from "./render.js"
 
 let
   canvas,
@@ -26,18 +26,20 @@ export function initGL() {
   precision highp float;
   in vec3 InPosition;
   in vec4 InColor;
-
+  in vec3 InNormal;
   out vec3 DrawPos;
   out vec4 DrawColor;
-
+  out vec3 DrawNormal;
   uniform float Time;
   uniform mat4 W;
   uniform mat4 WVP;
+
 
   void main( void )
   {
     gl_Position = WVP * vec4(InPosition, 1.0);
     DrawPos = vec3(W * vec4(InPosition, 1.0));
+    DrawNormal = mat3(transpose(inverse(W))) * InNormal;
     DrawColor = InColor;
   }
   `;
@@ -48,34 +50,48 @@ export function initGL() {
   
   in vec3 DrawPos;
   in vec4 DrawColor;
+  in vec3 DrawNormal;
   uniform vec3 CamLoc;
   uniform float Time;
 
   void main( void )
   {
-    vec3 L = vec3(-10.0 * sin(Time), -10.0 * cos(Time) * sin(Time), -10.0 * cos(Time)), LC = vec3(1.0), color = vec3(DrawColor);
+    vec3 L = vec3(-10.0 * sin(Time), -10.0 * cos(Time) * sin(Time), -10.0 * cos(Time)), LC = vec3(cos(sin(Time * 0.017) * Time * 0.07), cos(Time * 0.13) * sin(Time * 0.18), sin(cos(Time * 0.014) * Time * 0.11)), color = vec3(DrawColor);
     vec3 V = normalize(DrawPos - CamLoc);
     float d = length(DrawPos - CamLoc), att = max(0.1, 1.0 / (0.3 * d));
+    vec3 N = faceforward(DrawNormal, V, DrawNormal);
+    color += max(0.0, dot(N, L)) * 0.147 * LC;
+    vec3 R = reflect(V, N);
+    color += pow(max(0.0, dot(R, L)), 0.47) * 0.247 * LC;
     OutColor = vec4(color * att, 1.0);
-  }
+    }
   `;
   gl.loadShaders([gl.gl.VERTEX_SHADER, gl.gl.FRAGMENT_SHADER], sh);
   
   // Vertex buffer creation
   const size = 1.0;
-  let vertexes = {};
-  vertexes.pos = [-size, size, -size, -size, -size, -size, size, size, -size, size, -size, -size, 
+  let pos = [-size, size, -size, -size, -size, -size, size, size, -size, size, -size, -size, 
     size, size, size, size, -size, size, -size, size, size, -size, -size, size,
     -size, size, -size, -size, -size, -size, size, size, -size, size, -size, -size, 
     size, size, size, size, -size, size, -size, size, size, -size, -size, size,
     -size, size, -size, -size, -size, -size, size, size, -size, size, -size, -size, 
     size, size, size, size, -size, size, -size, size, size, -size, -size, size,];
-   vertexes.col = [1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 
+  let col = [1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 
     1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 
     1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0];
-  const indexes = [0, 1, 2, 1, 2, 3, 4, 5, 6, 5, 6, 7, 8, 9, 14, 9, 14, 15, 10, 11, 12, 11, 12, 13, 16, 18, 22, 18, 22, 20, 17, 19, 23, 19, 23, 21];
-  gl.createPrim(vertexes, indexes, setVertexFormat(2, ["InPosition", "InColor"], [0, 12]), gl.gl.TRIANGLES, 28);
-
+  let ind = [0, 1, 2, 3, 2, 1, 4, 5, 6, 7, 6, 5, 8, 9, 14, 15, 14, 9, 10, 11, 12, 13, 12, 11, 16, 18, 22, 20, 22, 18, 17, 19, 23, 21, 23, 19];
+  let norm = autoNormals(pos, ind);
+  let vertexes = setVertex(pos, col, norm).toArray();
+  let format = setVertexFormat(3, ["InPosition", "InColor", "InNormal"], [0, 12, 28]);
+  gl.createPrim(vertexes, ind, format, gl.gl.TRIANGLES, 40);
+  pos = [0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -1.0, 0.0,
+          0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -1.0, 0.0,
+          0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -1.0, 0.0,
+          0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -1.0, 0.0];
+  ind = [0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 7, 10, 12, 16, 15, 13, 14, 17, 18, 22, 19, 20, 21, 23];
+  norm = autoNormals(pos, ind);
+  vertexes = setVertex(pos, col, norm).toArray();
+  gl.createPrim(vertexes, ind, format, gl.gl.TRIANGLES, 40);
 }  // End of 'initGL' function               
 
 // Main render frame function
@@ -90,7 +106,7 @@ export function render() {
     gl.subUniformData("Time", 0, t, "1f");
     gl.subUniformData("CamLoc", 3, camloc.toArray(), "3fv");
     gl.subUniformData("W", 16, m.toArray(), "m4fv");
-    gl.subUniformData("WVP", 16, m.mul(camSet(vec3(5.0, 3.0, 5.0), vec3(0.0, -1.0, 0.0), vec3(0.0, 1.0, 0.0))).toArray(), "m4fv");
+    gl.subUniformData("WVP", 16, m.mul(gl.cam.vp).toArray(), "m4fv");
   }
   gl.draw();
 } // End of 'render' function.

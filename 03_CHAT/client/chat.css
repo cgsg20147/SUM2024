@@ -1,0 +1,95 @@
+* {
+    border: 0;
+    margin: 0;
+}
+body {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+}
+#panel {
+  border: 1px solid red;
+  width: 102px;
+  height: 47px;
+  background-color: #EDF;
+}
+.btn {
+  min-width: 300px;
+}
+.btn:before {
+  content: "  \1F839 ";
+  float: right;
+}
+.active:before {
+  content: "";
+  float: right;
+  font-size: 1.0em;
+  vertical-align: top;
+  position: relative;
+  width: 1.3em;
+  height: 1.3em;
+  background-image: url('https://i.imgur.com/MJekAr4.gif');
+  background-size: 1.3em 1.3em;
+  box-shadow: 1px 1px 5px #000;
+}
+.message_list {
+  padding: 8px;
+  border: solid 3px blue;
+  border-radius: 8px;
+  box-shadow: inset 10px 10px 30px rgba(0, 0, 0, 0.3),
+              inset 2px 2px 3px rgba(0,0,0,.5),
+              3px 3px 5px rgba(0, 0, 0, 0.4),
+              10px 10px 30px rgba(0, 0, 0, 0.5);
+}
+.message_body {
+  border: #888 1px solid;
+  border-width: 0px 1px 1px 1px;
+  background-color: white;
+}
+.message_head:after {
+  content: "\23F6";
+  float: right;
+}
+.message_head_collapse:after {
+  content: "\23F7";
+  float: right;
+}
+.message_head {
+  cursor: grab;
+  font-weight: bold;
+  background: linear-gradient(0deg, white, #AAA 80%) no-repeat;
+  border: #888 1px solid;
+  border-width: 1px 1px 0px 1px;
+}
+#txt {
+  width: 90%;
+  height: 5em;
+}
+#nic {
+  width: 47%;
+}
+.msg {
+  border: 1px solid #EEE;
+  margin: 0px;
+  padding: 8px;
+  border-radius: 0px 30px 30px 30px;
+  word-wrap:break-word;
+}
+#nic {
+    box-shadow: 2px 2px 7px darkgreen,  -2px -2px 7px darkgreen;
+    margin-bottom: 6px;
+    transition: 1s;
+}
+#nic:focus {
+    box-shadow: inset 2px 2px 7px darkgreen,  inset -2px -2px 7px darkgreen;
+    transition: 1s;
+}
+#nic2 {
+    box-shadow: 2px 2px 7px darkmagenta,  -2px -2px 7px darkmagenta;
+    margin-bottom: 6px;   
+    transition: 1s;
+}
+#nic2:focus {
+    box-shadow: inset 2px 2px 7px darkmagenta,  inset -2px -2px 7px darkmagenta;
+    transition: 1s;
+}

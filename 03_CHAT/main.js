@@ -10,6 +10,10 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({server});
 wss.on("connection", (ws) => {
     ws.on("message", (msg) => {
+        for (let client of wss.clients) {
+            if (client != ws)
+                client.send(msg.toString());
+        }
     })
 });
 
@@ -19,6 +23,3 @@ const port = 4747;
 server.listen(port, host, () => {
     console.log(`Server started on ${host}:${port}`);    
 });
-wss.on("message", (ws) => {
-
-})

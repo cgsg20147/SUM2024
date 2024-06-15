@@ -4,15 +4,25 @@ class _chat {
     this.user1 = String(user1);
     this.messages = [];    
   }
-  addmsg(msg, from, to) {
-    let m = $('<div class="message_entry"></div>');
-  
+  addmsg(msg, from, to) {    
+    let m
     const date = new Date();
     const dateFormatter = new Intl.DateTimeFormat('ru-RU', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit'});
     const t = dateFormatter.format(date);
-    
-    m.html("<div class='message_head' style = 'font-size: 10px;'>" + 
-      from + "</div><div class='message_body'><p class='msg'>" + msg + "</p><div style = 'text-align: right; font-size: 7px; padding-right: 15px;color: gray;opacity: 0.7'>" + t + "</div></div>");
+
+    if (user.name == from) {
+      m = $('<div class="message_entry" style = "border-radius: 30px 0px 30px 30px;"></div>');
+      m.html(`<div class='message_head' style = 'font-size: 10px; margin-left: calc(100% - ${from.length}ex - 7px);'>` + 
+        from + "</div><div class='message_body'><p class='msg'>" + msg + "</p><div style = 'text-align: right; font-size: 7px; padding-right: 15px;color: gray;opacity: 0.7'>" + t + "</div></div>");
+    }
+    else {
+      m = $('<div class="message_entry" style = "border-radius: 0px 30px 30px 30px;"></div>');
+      m.html("<div class='message_head' style = 'font-size: 10px; margin-left: 7px'>" + 
+        from + "</div><div class='message_body'><p class='msg'>" + msg + "</p><div style = 'text-align: right; font-size: 7px; padding-right: 15px;color: gray;opacity: 0.7'>" + t + "</div></div>");
+    }
+    m.dblclick(() => {
+      m.remove();
+    });
     m.prependTo("#messages");
     //$("#txt").appendTo("#mlist");
     //$("#send").appendTo("#mlist");
@@ -21,12 +31,24 @@ class _chat {
   }
   unshow() {
     for (let i = 0; i < this.messages.length; i++) {
-      this.messages[i].msg.hide();
+      if (this.messages[i].msg == undefined)
+        this.messages.splice(i, 1)
+      else
+        this.messages[i].msg.hide();
     }
   }
   show() {
     for (let i = 0; i < this.messages.length; i++) {
-      this.messages[i].msg.show();
+      if (this.messages[i].msg == undefined)
+        this.messages.splice(i, 1);
+      else if (this.messages[i].msg.from == user.name) {
+        this.messages[i].msg.css("border-radius", "30px 0px 30px 30px;")
+        this.messages[i].msg.show();
+      }
+      else {
+        this.messages[i].msg.css("border-radius", "0px 30px 30px 30px;");
+        this.messages[i].msg.show();
+      }
     }
   }
 }
@@ -119,13 +141,13 @@ $(document).ready(function() {
         user.active.addmsg(data.msg, data.from, data.to);
       }
     else {
-      user = addUser(data.from);
-      user2 = addUser(data.to);
+      user = addUser(data.to);
+      user2 = addUser(data.from);
       user.switchChat(user2.name);
       user.active.addmsg(data.msg, data.from, data.to);
       let i = user2.indChat(user.name);      
       user2.chats[i == -1 ? user2.chats.length : i] = user.findChat(user2.name);
-      if (data.to != $("#nic").val() || data.from != $("#nic2").val() || data.to != $("#nic2").val() || data.from != $("#nic").val()) {
+      if ((data.to != $("#nic").val() || data.from != $("#nic2").val()) && (data.to != $("#nic2").val() || data.from != $("#nic").val())) {
         user.active.unshow();
         user.active = null;
         user = null;
@@ -136,7 +158,7 @@ $(document).ready(function() {
     $("#send").click((e) => {
       if ($("#nic").val() == "" || $("#txt").val() == "" || $("#nic2").val() == "")
         return;
-      if (user != null && user.name != $("#nic").val())
+      if (user != null && (user.name != $("#nic").val() || user2.name != $("#nic2").val()))
         user.active.unshow();
       user = addUser($("#nic").val());
       user2 = addUser($("#nic2").val());

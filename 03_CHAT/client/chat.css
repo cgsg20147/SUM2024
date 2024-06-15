@@ -48,7 +48,7 @@ body {
   max-height: 500px;
   display: flex;
   flex-direction: column;
-  overflow: scroll;
+  overflow: hidden;
 }
 .message_body {
   color: whitesmoke;
@@ -58,21 +58,19 @@ body {
   font-weight: bold;
   color: orangered;
   opacity: 0.5;
-  margin-left: 5px;
 }
 #txt {
   width: 90%;
   min-height: 80px;
+  max-height: 80px;
+  
   border-radius: 25px;
   color: whitesmoke;
   font-weight: bold;
   background-color: #1F1F1F;
   padding: 5px;
   opacity: 0.7;
-  align-self: flex-end;
-}
-#nic {
-  width: 47%;
+  overflow: hidden;
 }
 .msg {
   padding: 3px;
@@ -83,32 +81,39 @@ body {
 #nic {
     box-shadow: 2px 2px 7px darkgreen,  -2px -2px 7px darkgreen;
     margin-bottom: 6px;
-    transition: 1s;
+    width: 47%;
+    text-align: center;
+    background-color: #2F2F2F;
+    font-weight: bold;
+    color: darkgray;
 }
 #nic:focus {
     box-shadow: inset 2px 2px 7px darkgreen,  inset -2px -2px 7px darkgreen;
-    transition: 1s;
 }
 #nic2 {
     box-shadow: 2px 2px 7px darkmagenta,  -2px -2px 7px darkmagenta;
-    margin-bottom: 6px;   
-    transition: 1s;
+    margin-bottom: 6px;
+    width: 47%;   
+    text-align: center;
+    background-color: #2F2F2F;
+    color: darkgray;
+    font-weight: bold;
 }
 #nic2:focus {
     box-shadow: inset 2px 2px 7px darkmagenta,  inset -2px -2px 7px darkmagenta;
-    transition: 1s;
 }
 .message_entry {
   background: linear-gradient(centre, darkorange, orangered) no-repeat;
-  border-radius: 0px 30px 30px 30px;
   border: 1px solid darkorange;
-  box-shadow: 2px 2px 3px darkorange, inset 2px 2px 3px darkorange;
+  box-shadow: 2px 2px 2px darkorange, inset 2px 2px 2px darkorange;
 }
 #messages {
   display: flex;
   flex-direction: column-reverse;
   gap: 10px;
+  overflow: scroll;
 }
+#messages::-webkit-scrollbar { width: 0; }
 #send {
   margin-bottom: 20px;
   min-height: 30px;

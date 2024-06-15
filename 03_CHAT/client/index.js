@@ -1,3 +1,4 @@
+let flag = true;
 class _chat {
   constructor(user1, user2) {
     this.user2 = String(user2);
@@ -156,6 +157,10 @@ $(document).ready(function() {
     }
     }
     $("#send").click((e) => {
+      if (flag) {
+        socket.send(JSON.stringify({msg: "sysload"}));
+        flag = false;
+      }
       if ($("#nic").val() == "" || $("#txt").val() == "" || $("#nic2").val() == "")
         return;
       if (user != null && (user.name != $("#nic").val() || user2.name != $("#nic2").val()))

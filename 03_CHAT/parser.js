@@ -1,5 +1,5 @@
 import { fs } from "./main.js";
-let rawchats, chats = [], str;
+let rawchats, nrawchats, chats = [], str;
 
 export async function write(msg, from, to) {
     str += from + '♦' + to + '♣' + msg + '♠';
@@ -15,20 +15,20 @@ function addmsg(msg, from, to) {
     chats[chats.length - 1].messages[0] = {msg: msg, from: from, to: to};
 }
 export function processRaw() {
-    rawchats = String(rawchats);
-    rawchats = rawchats.split('♠');
-    for (let i = 0, j = 0; i < rawchats.length; i++, j = 0) {
-        if (rawchats[i][0] == undefined)
+    nrawchats = String(rawchats);
+    nrawchats = nrawchats.split('♠');
+    for (let i = 0, j = 0; i <nrawchats.length; i++, j = 0) {
+        if (nrawchats[i][0] == undefined)
             continue;
         let user1 = [], user2 = [], msg = [], a;
-        while (rawchats[i][j] != '♦')
-            user1[j] = rawchats[i][j++];
+        while (nrawchats[i][j] != '♦')
+            user1[j] = nrawchats[i][j++];
         a = ++j;
-        while (rawchats[i][j] != '♣')
-            user2[j - a] = rawchats[i][j++];
+        while (nrawchats[i][j] != '♣')
+            user2[j - a] = nrawchats[i][j++];
         a = ++j;
-        while (rawchats[i][j] != undefined)
-            msg[j - a] = rawchats[i][j++];        
+        while (nrawchats[i][j] != undefined)
+            msg[j - a] = nrawchats[i][j++];        
         addmsg(msg.join(''), user1.join(''), user2.join(''));
     }
     return chats;

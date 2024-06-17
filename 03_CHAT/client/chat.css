@@ -9,31 +9,6 @@ body {
     background-image: url(./bback2.jpg);
     background-size: cover;
 }
-#panel {
-  border: 1px solid red;
-  width: 102px;
-  height: 47px;
-  background-color: #EDF;
-}
-.btn {
-  min-width: 300px;
-}
-.btn:before {
-  content: "  \1F839 ";
-  float: right;
-}
-.active:before {
-  content: "";
-  float: right;
-  font-size: 1.0em;
-  vertical-align: top;
-  position: relative;
-  width: 1.3em;
-  height: 1.3em;
-  background-image: url('https://i.imgur.com/MJekAr4.gif');
-  background-size: 1.3em 1.3em;
-  box-shadow: 1px 1px 5px #000;
-}
 .message_list {
   padding: 8px;
   border: solid 3px gray;
@@ -63,7 +38,6 @@ body {
   width: 90%;
   min-height: 80px;
   max-height: 80px;
-  
   border-radius: 25px;
   color: whitesmoke;
   font-weight: bold;
@@ -106,6 +80,7 @@ body {
   background: linear-gradient(centre, darkorange, orangered) no-repeat;
   border: 1px solid darkorange;
   box-shadow: 2px 2px 2px darkorange, inset 2px 2px 2px darkorange;
+  max-width: 70%;
 }
 #messages {
   display: flex;

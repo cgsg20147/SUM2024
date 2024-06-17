@@ -1,0 +1,56 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Sundanese:wght@400..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Shavian&family=Noto+Sans+Sundanese:wght@400..700&display=swap');
+.hahah1 {
+    font-family: "hahah1", sans-serif;
+    font-weight: 447;
+    font-style: normal;
+  }
+.noto-sans-shavian-regular {
+    font-family: "hahah2", sans-serif;
+    font-weight: 447;
+    font-optical-sizing: auto;
+    font-style: normal;
+}
+
+body
+{
+    background-image: url(eh5_grass.bmp);
+}
+* 
+{
+    padding: 0;
+    margin: 0;
+}
+td, th
+{
+    border: 2px brown solid;
+    text-align: center;    
+    filter: opacity(1);
+    transition: 10s;
+    font-size: 64px;
+    color: black;
+    text-shadow: 3px 2px 5px black;
+
+}
+td:hover
+{
+    filter: opacity(0);
+    transition: 1s;
+}
+.button
+{
+    margin-left: 50%;            
+}
+table
+{
+    border: 2px brown solid;
+}
+#clock
+{
+    position: absolute;
+    left: 50px;
+    top: 50px;
+    border-radius: 50% 50px;
+    background-color: bisque;
+    size: 100px 100px;
+}

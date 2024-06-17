@@ -12,7 +12,7 @@ class _chat {
     const t = dateFormatter.format(date);
 
     if (user.name == from) {
-      m = $('<div class="message_entry" style = "border-radius: 30px 0px 30px 30px;"></div>');
+      m = $('<div class="message_entry" style = "border-radius: 30px 0px 30px 30px; margin-left: 30%;"></div>');
       m.html(`<div class='message_head' style = 'font-size: 10px; margin-left: calc(100% - ${from.length}ex - 7px);'>` + 
         from + "</div><div class='message_body'><p class='msg'>" + msg + "</p><div style = 'text-align: right; font-size: 7px; padding-right: 15px;color: gray;opacity: 0.7'>" + t + "</div></div>");
     }
@@ -25,8 +25,6 @@ class _chat {
       m.remove();
     });
     m.prependTo("#messages");
-    //$("#txt").appendTo("#mlist");
-    //$("#send").appendTo("#mlist");
     $("#txt").val("");
     this.messages[this.messages.length] = {msg: m, from: from, to: to};
   }
@@ -42,8 +40,9 @@ class _chat {
     for (let i = 0; i < this.messages.length; i++) {
       if (this.messages[i].msg == undefined)
         this.messages.splice(i, 1);
-      else if (this.messages[i].msg.from == user.name) {
-        this.messages[i].msg.css("border-radius", "30px 0px 30px 30px;")
+      else if (this.messages[i].from == user.name) {
+        this.messages[i].msg.css("border-radius", "30px 0px 30px 30px");
+        this.messages[i].msg.css("margin-left", "30%");
         this.messages[i].msg.show();
       }
       else {
@@ -65,9 +64,13 @@ class _user {
   }
   switchChat(to) {
     let newc = null;
-    newc = this.findChat(to);
     if (this.active != null)
       this.active.unshow();
+    if (to == "") {
+      this.active = null;
+      return;
+    }
+    newc = this.findChat(to);
     if (newc != null) {
       newc.show();
       this.active = newc;
@@ -105,6 +108,12 @@ $(document).ready(function() {
   socket.onmessage = (msg) => {
     let data = JSON.parse(msg.data.toString());
     if (user != null) {
+      if ($("#nic").val() != user.name || $("#nic2").val() != user2.name) {
+        user.switchChat('');
+        user = addUser($("#nic").val());
+        user2 = addUser($("#nic2").val());
+        user.switchChat(user2.name);
+      }
       if (data.from != user.name && user.name != data.to) {
         let newuser = addUser(data.from);
         newuser.switchChat(data.to);
@@ -112,8 +121,7 @@ $(document).ready(function() {
         let newuser2 = addUser(data.to);
         let i = newuser2.indChat(data.from);
         newuser2.chats[i == -1 ? newuser2.chats.length : i] = newuser.active;
-        newuser.active.unshow();
-        newuser.active = null;
+        newuser.switchChat('');
         }
       else if (user2.name != data.from && user.name != data.from) {
         let newuser2 = addUser(data.from);
@@ -149,22 +157,17 @@ $(document).ready(function() {
       let i = user2.indChat(user.name);      
       user2.chats[i == -1 ? user2.chats.length : i] = user.findChat(user2.name);
       if ((data.to != $("#nic").val() || data.from != $("#nic2").val()) && (data.to != $("#nic2").val() || data.from != $("#nic").val())) {
-        user.active.unshow();
-        user.active = null;
+        user.switchChat('');
         user = null;
         user2 = null;
       }
     }
     }
     $("#send").click((e) => {
-      if (flag) {
-        socket.send(JSON.stringify({msg: "sysload"}));
-        flag = false;
-      }
       if ($("#nic").val() == "" || $("#txt").val() == "" || $("#nic2").val() == "")
         return;
       if (user != null && (user.name != $("#nic").val() || user2.name != $("#nic2").val()))
-        user.active.unshow();
+        user.switchChat("");
       user = addUser($("#nic").val());
       user2 = addUser($("#nic2").val());
       let i = user2.indChat(user.name);
@@ -174,3 +177,18 @@ $(document).ready(function() {
       user.active.addmsg($("#txt").val(), user.name, user2.name);
   });
 });
+
+setInterval(() => {
+  if (flag) {
+    socket.send(JSON.stringify({msg: "sysload"}));
+    flag = false;
+  }
+  if (user != null && (user.name != $("#nic").val() || user2.name != $("#nic2").val()) && $("#nic").is(':focus') == false && $("#nic2").is(':focus')) {
+    user.switchChat("");
+    user = addUser($("#nic").val());
+    user2 = addUser($("#nic2").val());
+    let i = user2.indChat(user.name);
+    user2.chats[i == -1 ? user2.chats.length : i] = user.findChat(user2.name);
+    user.switchChat(user2.name);
+  }
+  }, 1000)

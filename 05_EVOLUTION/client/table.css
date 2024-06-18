@@ -1,0 +1,85 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+body {
+    width: 1900px;
+    height: 1000px;
+}
+@keyframes water {
+    0% {
+        background-color:navy;
+    }
+    25% {
+        background-color:mediumblue;
+    }
+    50% {
+        background-color: darkblue;
+    }
+    75% {
+        background-color: blue;
+    }
+    100% {
+        background-color:royalblue;
+    }
+}
+#game_field {
+    display: grid;
+    grid-template-columns: 1;
+    grid-template-rows: 3;
+    width: 1900px;
+    height: 1000px;
+    animation-duration: 20s;
+    animation-direction: alternate;
+    animation-iteration-count: infinite;
+    animation-name: water;
+}
+#laurazia, #gondvana, #ocean {
+    display: flex;
+}
+#table {
+    display: none;
+}
+.active {
+    display: flex;
+    width: 1900px !important;
+    height: 1000px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transition: all 1s !important;
+}
+.latent {
+    display: none;
+}
+#laurazia {
+    margin-left: 10%;
+    margin-top: 3%;
+    width: 80%;
+    height: 80%;
+    border-radius: 50px;
+    background-color: green;
+    transition: all 2s;
+    box-shadow: -5px -5px 3px darkgreen, 5px 5px 3px darkgreen;
+}
+#gondvana {
+    margin-left: 7.5%;
+    margin-bottom: 3%;
+    width: 85%;
+    height: 85%;
+    border-radius: 30px;
+    background-color: goldenrod;
+    transition: all 2s;
+    box-shadow: -7px -7px 3px darkgoldenrod, 7px 7px 3px darkgoldenrod;
+}
+.entity.reverse .entInfo{
+    transform: scale(-1, 0);
+    background-image: none;
+}
+.entity {
+    display: flex;
+    flex-direction: column;
+    background-image: url(./Light_green.jpg);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-color: forestgreen;
+}

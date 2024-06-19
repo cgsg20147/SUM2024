@@ -1,0 +1,18 @@
+{
+  "continent": "laurazia",
+  "plants": [],
+  "entities": []
+}
+{
+  "continent": "gondvana",
+  "plants": [],
+  "entities": []
+}
+{
+  "continent": "ocean",
+  "entities": []
+}
+{
+  "continent": "deathQueue",
+  "queue": []
+}

@@ -1,3 +1,6 @@
+@import url('https://fonts.googleapis.com/css2?family=Gluten:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rubik+Mono+One&display=swap');
+
 * {
     margin: 0;
     padding: 0;
@@ -39,6 +42,11 @@ body {
 }
 #table {
     display: none;
+    background-color: chocolate;
+    width: 1900px;
+    height: 1000px;
+    gap: 15px;
+    flex-wrap: wrap;
 }
 .active {
     display: flex;
@@ -57,7 +65,7 @@ body {
     width: 80%;
     height: 80%;
     border-radius: 50px;
-    background-color: green;
+    background-color: #5FAD47;
     transition: all 2s;
     box-shadow: -5px -5px 3px darkgreen, 5px 5px 3px darkgreen;
 }
@@ -82,4 +90,55 @@ body {
     background-size: cover;
     background-repeat: no-repeat;
     background-color: forestgreen;
+}
+#viewt {
+    position: absolute;
+    background-image: url('./dark_lizards.jpg');
+    background-size: cover;
+    right: 50px;
+    top: 50px;
+    width: 100px;
+    height: 100px;
+    font-size: 30px;
+    font-weight: bold;
+    font-family: "Gluten", cursive;
+}
+#readyb {
+    font-size: 100px;
+    font-weight: 1000;
+    color: bisque;
+    background-color: rgba(80, 120, 130, 0.8);
+    font-family: "Rubik Mono One", monospace;
+}
+.card {
+    background-image: url("./Light_green.jpg");
+    background-size: cover;
+    width: 200px;
+    height: 300px;
+    border-radius: 10%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.cardName {
+    align-self: center;
+    text-align: center;
+    font-family: "Gluten", cursive;
+    font-size: 25px;
+    word-wrap: break-word;
+    text-align: center;
+}
+.description {
+    justify-self: end;
+    font-size: 15px;
+    font-family: "Gluten", cursive;
+    text-align: center;
+    max-width: 180px;
+    height: 80%;
+    word-wrap: break-word;
+}
+.addStarv {
+    color: red;
+    font-weight: bold;
+    font-size: 50px;
 }

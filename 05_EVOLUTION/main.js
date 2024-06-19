@@ -36,3 +36,5 @@ server.listen(port, host, () => {
     console.log(`Server started on ${host}:${port}`);
     main();
 });
+
+export {collection};

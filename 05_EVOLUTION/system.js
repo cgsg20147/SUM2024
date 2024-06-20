@@ -29,8 +29,9 @@ export async function processmsg(wssa, ws, msg) {
                 flag = false;
         if (noofu == 1)
             break;
-        for (let user of users)
-            sendAll({event: "new user", user: user});
+        if (liderind == -1)
+            for (let user of users)
+                sendAll({event: "new user", user: user});
         /* if all users are ready, game starts */
         if (flag) {
             if (phase == -1) {
@@ -88,21 +89,30 @@ export async function processmsg(wssa, ws, msg) {
     /* next gamer move */
     case "next":
         moveind = (moveind + 1) % noofu;
-        sendAll({event: "move", name: users[moveind]});
+        sendAll({event: "move", name: users[moveind].name, phase: cycle[phase]});
         break;
     /* the leader choosed continent for new plant */
     case "new plant":
         let plant = base.plants[base.rand() % base.plants.length];
         plant.id = id++;
-        plant.continent = msg.continent
+        plant.continent = msg.continent;
         addPlantity(msg.continent, "plant", plant);
         sendAll({event: "new plant", plant: plant})
         break;
     case "new entity":
         let entity = new base._entity(msg.name);
+        entity.id = id++;
         entity.continent = msg.continent;
         addPlantity(msg.continent, "entity", entity);
         sendAll({event: "new entity", entity: entity})
+        break;
+    case "new property":
+        for await (let entity of collection.find({id: Number(msg.id)})) {
+            entity.data.internals[msg.card.prop.name] = msg.card.prop.value;
+            entity.data.necFood += msg.card.addStarv;
+            changePlantity(Number(msg.id), "entity", entity.data, "change");
+            sendAll({event: "new property", id: Number(msg.id), prop: msg.card.prop, addstarv: msg.card.addStarv});
+        }
         break;
     case "death":
         addPlantity("deathQueue", msg.type, msg.data);
@@ -140,7 +150,6 @@ async function cyclef() {
                 for (let k = 0; k < c; k++)
                     sendAll({event: "new entity", name: user.name, continent: continents[k]});
         }
-
         /* growing all plants */
         for await (let continent of collection.find({continent: "laurazia"}))
             for (let k = 0; k < continent.plants.length; k++) {
@@ -155,17 +164,19 @@ async function cyclef() {
             sendAll({event: "grow"});
 
             /* setting new plants */
-            let plant = base.plants[base.rand() % base.plants.length];
-            plant.id = id++;
             for await (let laurazia of collection.find({continent: "laurazia"}))
                 for await (let gondvana of collection.find({continent: "gondvana"}))
                     if (laurazia.plants.length > gondvana.plants.length) {
+                        let plant = base.plants[base.rand() % base.plants.length];
+                        plant.id = id++;
                         addPlantity("gondvana", "plant", plant)
                         sendAll({event: "new plant", plant: plant});
                     }
                     else if (gondvana.plants.length > laurazia.plants.length) {
                         addPlantity("laurazia", "plant", plant);
                         sendAll({event: "new plant", plant: plant});
+                        let plant = base.plants[base.rand() % base.plants.length];
+                        plant.id = id++;
                     }
                     else
                         sendAll({event: "choose plant"}); /* lider is choosing place for new plant */
@@ -202,10 +213,7 @@ function getPlantity(pid) {
 }
 async function changePlantity(pid, type, data, move) {
     if (move == "change") 
-        if (type == "plant")
-            collection.replaceOne({id: pid}, {id: pid, type: type, data: data});
-        else
-            collection.replaceOne({id: pid}, {id: pid, type: type, data: data});
+            collection.replaceOne({id: pid, type: type}, {id: pid, type: type, data: data});
     else
         collection.deleteOne({id: pid});
     let oldplantity;

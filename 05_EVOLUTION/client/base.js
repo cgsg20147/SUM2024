@@ -17,7 +17,7 @@ class _entity {
         this.starvation = 0;
         this.necFood = 1;
         this.continent;
-        this.internals = [];
+        this.internals = {};
         this.id = -1;
         this.owner = name;
     }
@@ -27,15 +27,8 @@ class _card {
     constructor(name, description, addStarv, addProps) {
         this.name = name;               /* card name */
         this.addStarv = addStarv;       /* adding extra starving value */
-        this.addProps = addProps;       /* adding properties to entity */
+        this.prop = addProps;       /* adding properties to entity */
         this.description = description; /* card properties description */
-    }
-    /* setting new property to entity function */
-    set(entity) {
-        for (let i = 0; i < this.addProps.length; i++)
-            entity[this.addProps[i].name] = this.addProps[i].prop
-        entity.internals[this.name] = {props: this.addProps, description: this.description};
-        entity.necFood += this.addStarv;
     }
 }
 
@@ -53,24 +46,65 @@ class _user {
 
 /* all game cards, later will be in data base */
 export let cards = [
-new _card("Большой", "Может быть съедено только хищником со свойством БОЛЬШОЙ", 1, {name: "big", prop: true}),
-new _card("Быстрое", "", 0, {name: "fast", prop: () => {return (Math.random() % 6 + 1 > 3 ? true : false)}}),
-new _card("Взаимодействие", "", 0, {name: "communication", prop: () => {}}),
-new _card("Водоплавающее", "", 0, {name: "swimming", prop: true}),
-new _card("Камуфляж", "Может быть атаковано только хищником со свойством ОСТРОЕ ЗРЕНИЕ", 0, {name: "camouflage", prop: true}),
-new _card("Мимикрия", "", 0, {name: "mimicry", prop: "choose"}),
-new _card("Норное", "Когда животное накомлено, оно не может быть атаковано хищником", 0, {name: "burrow", prop: "state"}),
-new _card("Острое зрение", "Хищник с этим свойством может атаковать животное со свойством КАМУФЛЯЖ", 0, {name:"sharp vision", prop: true}),
-new _card("Отбрасывание хвоста", "", 0, {name:'tail loss', prop: "choose"}),
-new _card("Падальщик", "", 0, {name:'scavenger', prop: "choose"}),
-new _card("Паразит", "", 0, {name:'parasite', prop: true}),
-new _card("Пиратство", "", 0, {name:'piracy', prop: "choose"}),
-new _card("Симбиоз", "", 0, {name:'symbiosis', prop: true}),
-new _card("Сотрудничество", "", 0, {name:'cooperation', prop: () => {}}),
+new _card("Большой", "Может быть съедено только хищником со свойством БОЛЬШОЙ", 1, {name: "big", value: true}),
+new _card("Быстрое", "", 0, {name: "fast", value: true}),
+new _card("Взаимодействие", "", 0, {name: "communication", value: true}),
+new _card("Водоплавающее", "", 0, {name: "swimming", value: true}),
+new _card("Камуфляж", "Может быть атаковано только хищником со свойством ОСТРОЕ ЗРЕНИЕ", 0, {name: "camouflage", value: true}),
+new _card("Мимикрия", "Когда животное атаковано первый раз, атака направляется на другое животное", 0, {name: "mimicry", value: true}),
+new _card("Норное", "Когда животное накомлено, оно не может быть атаковано хищником", 0, {name: "burrow", value: true}),
+new _card("Острое зрение", "Хищник с этим свойством может атаковать животное со свойством КАМУФЛЯЖ", 0, {name:"sharp vision", value: true}),
+new _card("Отбрасывание хвоста", "", 0, {name:'tail loss', value: true}),
+new _card("Падальщик", "", 0, {name:'scavenger', value: true}),
+new _card("Паразит", "", 0, {name:'parasite', value: true}),
+new _card("Пиратство", "", 0, {name:'piracy', value: true}),
+new _card("Симбиоз", "", 0, {name:'symbiosis', value: true}),
+new _card("Сотрудничество", "", 0, {name:'cooperation', value: true}),
+new _card("Хищник", "", 0, {name:'carnivorous', value: true}),
+new _card("Хищник", "", 0, {name:'carnivorous', value: true}),
+new _card("Хищник", "", 0, {name:'carnivorous', value: true}),
+new _card("Хищник", "", 0, {name:'carnivorous', value: true}),
+new _card("Хищник", "", 0, {name:'carnivorous', value: true}),
+new _card("Хищник", "", 0, {name:'carnivorous', value: true}),
+new _card("Хищник", "", 0, {name:'carnivorous', value: true}),
+new _card("Хищник", "", 0, {name:'carnivorous', value: true}),
+new _card("Хищник", "", 0, {name:'carnivorous', value: true}),
 ];
 export let plants = [
 new _plant("Однолетник", 3, 2, 1, 0, false),
-new _plant("Многолетник", 5, 3, 1, 0, false)
+new _plant("Многолетник", 5, 3, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
+new _plant("Однолетник", 3, 2, 1, 0, false),
 ]
 export {_card, _user, _entity, _plant};
 export function rand() {

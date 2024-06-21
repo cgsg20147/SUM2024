@@ -100,10 +100,10 @@ export async function processmsg(wssa, ws, msg) {
                 if (users[i % noofu].ready == false)
                     flag = true;
             if (flag)
-                return;
+                sendAll({event: "move", name: users[moveind].name, phase: cycle[phase]});
         }
-
-        sendAll({event: "move", name: users[moveind].name, phase: cycle[phase]});
+        else
+            sendAll({event: "move", name: users[moveind].name, phase: cycle[phase]});
         break;
     /* the leader choosed continent for new plant */
     case "new plant":
@@ -125,8 +125,21 @@ export async function processmsg(wssa, ws, msg) {
             entity.data.internals[msg.card.prop.name] = msg.card.prop.value;
             entity.data.necFood += msg.card.addStarv;
             changePlantity(Number(msg.id), "entity", entity.data, "change");
-            sendAll({event: "new property", id: Number(msg.id), prop: msg.card.prop, addstarv: msg.card.addStarv});
+            sendAll({event: "new property", id: Number(msg.id), card: msg.card});
         }
+        break;
+    case "remove property":
+        for await (let entity of collection.find({id: msg.id})) {
+            entity.data.internals[msg.propName] = undefined;
+            changePlantity(Number(msg.id), "entity", entity.data, "change");
+            sendAll({event: "remove property", id: msg.id, prop: msg.card.prop.name})
+        }
+        break;
+    case "attack":
+        if (defense(msg.entity, msg.target))
+            sendAll({event: "lose attack", provocator: msg.entity.owner, victim: msg.target.owner});
+        else
+            sendAll({event: "predeath", entity: msg.entity, target: msg.target});
         break;
     case "death":
         addPlantity("deathQueue", msg.type, msg.data);
@@ -282,4 +295,6 @@ async function addPlantity(continent, type, data) {
             collection.replaceOne({continent: continent}, plantity);
     }
     collection.insertOne({type: type, data: data, id: data.id});
+}
+function defense(ent1, ent2) {
 }

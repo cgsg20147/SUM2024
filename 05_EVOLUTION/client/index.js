@@ -1,7 +1,7 @@
 import * as base from "./base.js"
 
-let users = [], myname, laurazia = {plants: [], entities: []}, gondvana = {plants: [], entities: []}, ocean = {entities: []}, turn = false, phase, active, skip = false,
-myid = [], target;
+let users = [], myname, laurazia = {plants: [], entities: []}, gondvana = {plants: [], entities: []}, ocean = {entities: []}, turn = false, phase, active = null, skip = false,
+myid = [], target = null;
 
 let socket = new WebSocket("ws://localhost:4747"), continent;
 $(document).ready(function() {
@@ -13,8 +13,8 @@ $(document).ready(function() {
         ready = true;
         active = null;
         skip = true;
-        socket.send(JSON.stringify({event: "ready", name: myname}));
         next();
+        socket.send(JSON.stringify({event: "ready", name: myname}));
     });
     $("#readyb").click(() => {
         ready();
@@ -22,14 +22,69 @@ $(document).ready(function() {
         socket.send(JSON.stringify({event: "ready", name: myname}));
     });
     $("#viewt").click(() => {
-        if ($("#viewt").val() == "карты") {
-            $("#table").css("top", "0px");
-            $("#viewt").val("назад");
-        }
-        else {
-            $("#table").css("top", "-1000px");            
-            $("#viewt").val("карты");
-        }
+        if (phase != "alimentation")
+            if ($("#viewt").val() == "карты") {
+                $("#table").css("top", "0px");
+                $("#viewt").val("назад");
+            }
+            else {
+                $("#table").css("top", "-1000px");            
+                $("#viewt").val("карты");
+            }
+        else
+            if (active != null && target != null) {
+                let ent1 = null, ent2 = null;
+                for (let i = 0; i < laurazia.entities.length; i++)
+                    if (active == laurazia.entities[i].id)
+                        ent1 = laurazia.entities[i];
+                    else if (target == laurazia.entities[i].id)
+                        ent2 = laurazia.entities[i].id;
+                if (ent1 != null && ent2 == null)
+                    for (let i = 0; i < laurazia.plants.length; i++)
+                        if (target == laurazia.plants[i].id)
+                            target = laurazia.plants[i];
+                else if (ent1 == null) {
+                    for (let i = 0; i < gondvana.entities.length; i++)
+                        if (active == gondvana.entities[i].id)
+                            ent1 = gondvana.entities[i];
+                        else if (target == gondvana.entities[i].id)
+                            ent2 = gondvana.entities[i].id;
+                    if (ent1 != null && ent2 == null)
+                        for (let i = 0; i < gondvana.plants.length; i++)
+                            if (target == gondvana.plants[i].id)
+                                target = gondvana.plants[i];
+                }
+                else if (ent1 == null) {
+                    for (let i = 0; i < ocean.entities.length; i++)
+                        if (active == ocean.entities[i].id)
+                            ent1 = ocean.entities[i];
+                        else if (target == ocean.entities[i].id)
+                            ent2 = ocean.entities[i].id;
+                }
+                if (ent2.shield != undefined && ent1.starvation > 0 && ent2.food > 0) {
+                    $("#" + target).css("border", "0px");
+                    $("#" + active).css("border", "0px");
+                    ent2.food--;
+                    ent1.starvation--;
+                    socket.send(JSON.stringify({event: "eat", id: active, target: target, curstarvation: ent1.starvation}));
+                    active = null;
+                    target = null;
+                    next();
+                }
+                if (ent2.shield == undefined) {
+                    $("#" + target).remove();
+                    $("#" + active).css("border", "0px");
+                    if (ent1.starvation > 0)
+                        ent1.starvation--;
+                    if (ent1.starvation > 0)
+                        ent1.starvation--;
+                    socket.send(JSON.stringify({event: "kill", entity: active, target: target}));
+                    active = null;
+                    target = null;
+                    next();
+                }
+
+            }
     });
     $('#laurazia, #gondvana, #ocean').click((event) => {
         if (turn == false)
@@ -155,7 +210,8 @@ $(document).ready(function() {
         case "room size":
             let a, flag = false;
             while (flag ==  false) {
-                if ((a = window.prompt("Размер комнаты:")) == null || a > 8 || Number(a) == NaN || a < 2)
+                a = parseInt(prompt("Размер комнаты:"));
+                if (a == null || a > 8 || a < 2 || isNaN(a))
                     window.alert("Нельзя взять такое количество людей!");
                 else
                     flag = true;
@@ -226,6 +282,7 @@ $(document).ready(function() {
                         gondvana.entities[i].starvation = gondvana.entities[i].necFood;
                     for (let i = 0; i < ocean.entities.length; i++)
                         ocean.entities[i].starvation = ocean.entities[i].necFood;
+                    $("#viewt").val("Подтвердить");
                     $(".e_food").css("display", "block");
                 }
                 else {
@@ -235,7 +292,7 @@ $(document).ready(function() {
                         gondvana.entities[i].starvation = 0;
                     for (let i = 0; i < ocean.entities.length; i++)
                         ocean.entities[i].starvation = 0;
-                    $(".e_food").css("display", "block");
+                    $(".e_food").css("display", "none");
                 }
             }
             if (myname != data.name)
@@ -271,16 +328,16 @@ $(document).ready(function() {
                 for (let i = 0; i < ocean.entities.length; i++)
                     if (ocean.entities[i].id == '_' + data.id)
                         entity = ocean.entities[i];
-            if (entity.internals[data.prop.name] == true) {
+            if (entity.internals[data.card.prop.name] == true) {
                 window.alert("У выбранного животного уже есть это свойство!");
                 return;
             }
-            entity.internals[data.prop.name] = data.prop.value;
-            entity.necFood += data.addstarv;
-            if (data.prop.name == "carnivorous")
+            entity.internals[data.card.prop.name] = data.card.prop.value;
+            entity.necFood += data.card.addStarv;
+            if (data.card.prop.name == "carnivorous")
                 $("#" + entity.id).prop("class", `${myid.lastIndexOf(entity.id) == -1 ? 'e' : 'f'}_c_entity`);
             else
-                $("#" + entity.id).html($("#" + entity.id).html() + `<p class = "property">${data.prop.name}</p>`);
+                $("#" + entity.id).html($("#" + entity.id).html() + `<p class = "property">${data.card.name}</p>`);
             break;
         }
 
@@ -304,6 +361,7 @@ function createEnt(entity, type) {
     if (type == "entity" && entity.owner != myname) {
         let flag = false;
         e = $(`<div class = 'e_l_entity' id = ${entity.id}></div>`);
+        e.html(`<p class = "owner">${entity.owner}</p>`)
         e.appendTo("#" + entity.continent[0] + "_entities");
         e.dblclick((event) => {
             if (flag) {
@@ -353,16 +411,20 @@ function createEnt(entity, type) {
     }
     else if (type == "entity") {
         let flag = false;
-        e = $(`<div class = 'f_l_entity' id = ${entity.id}><p class = "e_food">${entity.maxFood - entity.starvation}/${entity.maxFood}</p></div>`);
+        e = $(`<div class = 'f_l_entity' id = ${entity.id}><p class = "e_food">${entity.necFood - entity.starvation}/${entity.necFood}</p></div>`);
         e.appendTo("#" + entity.continent[0] + "_entities");
         myid.push(entity.id);
         e.dblclick((event) => {
             if (flag) {
+                event.currentTarget.children().style.transition = "scaleY 1.5s";
                 event.currentTarget.style.transform = "rotateY(0deg)";
+                event.currentTarget.children().style.transform = "scaleY(1)";
                 flag = false;
             }
             else {
+                event.currentTarget.children().style.transition = "scaleY 1.5s";
                 event.currentTarget.style.transform = "rotateY(-180deg)";
+                event.currentTarget.children().style.transform = "scaleY(-1)";
                 flag = true;
             }
             event.stopPropagation();
@@ -403,13 +465,31 @@ function createEnt(entity, type) {
                     event.preventDefault();
                     return;
                 }
-                if (active != null) {
+                if (active != null)
                     $("#" + active).css("border", "0px");
-                }
                 active = event.currentTarget.id;
                 $("#" + active).css("border", "7px solid red");
                 event.preventDefault();
         });
+        else {
+            e.click((event) => {
+                if (turn == false || phase != "alimentation" || active == null) {
+                    event.preventDefault();
+                    return;
+                }
+                if (target == event.currentTarget.id) {
+                    event.currentTarget.style.border = "0px";
+                    target = null;
+                    event.preventDefault();
+                    return;
+                }
+                if (target != null)
+                    $("#" + target).css("border", "0px");
+                target = event.currentTarget.id;
+                $("#" + target).css("border", "darkgreen 7px solid");
+                event.preventDefault();
+            });
+        }
         myid.push(entity.id);
     }
     e.get(0).id = entity.id;
@@ -473,5 +553,7 @@ function createCards(cards) {
     }
 }
 function canAttack(ent1, ent2) {
-
+    if (ent2.internals["big"] && !ent1.internals["big"])
+        return false;
+    return true;
 }

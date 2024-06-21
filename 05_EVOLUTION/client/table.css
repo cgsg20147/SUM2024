@@ -101,6 +101,7 @@ body {
     width: 400px;
     height: 180px;
     border-radius: 40px;
+    background-color: palegreen ;
 }
 .e_l_entity {
     background-image: url('./Yellow.jpg');

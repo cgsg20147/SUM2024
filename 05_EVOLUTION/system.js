@@ -2,7 +2,7 @@ import * as base from "./client/base.js"
 import { collection } from "./main.js";
 
 /* Global variables (later they will be in one object) */
-let users = [], cycle = ["upturn", "evolution", "alimentation", "extincion"], phase = -1, deathQueue = [], noofu = 0, liderind = -2, moveind = 0, id = 0, wss;
+let users = [], cycle = ["upturn", "evolution", "alimentation", "extincion"], phase = -1, deathQueue = [], noofu = 0, liderind = -2, moveind = 0, id = 0, wss, size;
 
 /* processing messages function */
 export async function processmsg(wssa, ws, msg) {
@@ -13,21 +13,28 @@ export async function processmsg(wssa, ws, msg) {
             users[noofu++] = users[msg.name] = new base._user();
             if (liderind == -2) {
                 users[msg.name].lider = true;
-                liderind = -1;
                 wss = wssa;
+                sendAll({event: "room size"});
+                liderind = -1;
             }
             users[msg.name].name = msg.name;
         }
         break;
-
+    
+    case "room size":
+        size = msg.size;
+        break;
+    
     /* one of users ends his turn in phase */
     case "ready":
+        if (users[msg.name] == undefined)
+            ws.close();
         users[msg.name].ready = true;
         let flag = true;
         for (let user of users)
             if (user.ready == false)
                 flag = false;
-        if (noofu == 1)
+        if (noofu == 1 || noofu < size)
             break;
         if (liderind == -1)
             for (let user of users)
@@ -39,8 +46,6 @@ export async function processmsg(wssa, ws, msg) {
 
                 /* choosing start number of plants from number of gamers */
                 switch (noofu) {
-                case 1:
-                    break;
                 case 2:
                     noofp = 2;
                     break;
@@ -89,6 +94,15 @@ export async function processmsg(wssa, ws, msg) {
     /* next gamer move */
     case "next":
         moveind = (moveind + 1) % noofu;
+        if (users[moveind].ready == true) {
+            let flag = false;
+            for (let i = 0; i < noofu; i++)
+                if (users[i % noofu].ready == false)
+                    flag = true;
+            if (flag)
+                return;
+        }
+
         sendAll({event: "move", name: users[moveind].name, phase: cycle[phase]});
         break;
     /* the leader choosed continent for new plant */

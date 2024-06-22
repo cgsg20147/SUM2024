@@ -135,11 +135,8 @@ export async function processmsg(wssa, ws, msg) {
             sendAll({event: "remove property", id: msg.id, prop: msg.card.prop.name})
         }
         break;
-    case "attack":
-        if (defense(msg.entity, msg.target))
-            sendAll({event: "lose attack", provocator: msg.entity.owner, victim: msg.target.owner});
-        else
-            sendAll({event: "predeath", entity: msg.entity, target: msg.target});
+    case "eat":
+        sendAll({event: "death", entity: msg.entity, target: msg.target});
         break;
     case "death":
         addPlantity("deathQueue", msg.type, msg.data);

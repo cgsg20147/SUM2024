@@ -39,20 +39,22 @@ $(document).ready(function() {
                         ent1 = laurazia.entities[i];
                     else if (target == laurazia.entities[i].id)
                         ent2 = laurazia.entities[i].id;
-                if (ent1 != null && ent2 == null)
+                if (ent1 != null && ent2 == null) {
                     for (let i = 0; i < laurazia.plants.length; i++)
                         if (target == laurazia.plants[i].id)
-                            target = laurazia.plants[i];
+                            ent2 = laurazia.plants[i];
+                }
                 else if (ent1 == null) {
-                    for (let i = 0; i < gondvana.entities.length; i++)
+                    for (let i = 0; i < gondvana.entities.length; i++) {
                         if (active == gondvana.entities[i].id)
                             ent1 = gondvana.entities[i];
                         else if (target == gondvana.entities[i].id)
                             ent2 = gondvana.entities[i].id;
+                    }
                     if (ent1 != null && ent2 == null)
                         for (let i = 0; i < gondvana.plants.length; i++)
                             if (target == gondvana.plants[i].id)
-                                target = gondvana.plants[i];
+                                ent2 = gondvana.plants[i];
                 }
                 else if (ent1 == null) {
                     for (let i = 0; i < ocean.entities.length; i++)
@@ -64,8 +66,8 @@ $(document).ready(function() {
                 if (ent2.shield != undefined && ent1.starvation > 0 && ent2.food > 0) {
                     $("#" + target).css("border", "0px");
                     $("#" + active).css("border", "0px");
-                    ent2.food--;
-                    ent1.starvation--;
+                    $("#" + ent2.id).children(".p_name").children(".food").text(`${--ent2.food}/${ent2.maxFood}`)
+                    $("#" + ent1.id).children(".e_food").text(`${--ent1.starvation}/${ent1.necFood}`);
                     socket.send(JSON.stringify({event: "eat", id: active, target: target, curstarvation: ent1.starvation}));
                     active = null;
                     target = null;
@@ -75,9 +77,9 @@ $(document).ready(function() {
                     $("#" + target).remove();
                     $("#" + active).css("border", "0px");
                     if (ent1.starvation > 0)
-                        ent1.starvation--;
+                        $("#" + ent1.id).children(".e_food").text(`${--ent1.starvation}/${ent1.necFood}`);
                     if (ent1.starvation > 0)
-                        ent1.starvation--;
+                        $("#" + ent1.id).children(".e_food").text(`${--ent1.starvation}/${ent1.necFood}`);
                     socket.send(JSON.stringify({event: "kill", entity: active, target: target}));
                     active = null;
                     target = null;
@@ -89,6 +91,10 @@ $(document).ready(function() {
     $('#laurazia, #gondvana, #ocean').click((event) => {
         if (turn == false)
             return;
+        if (phase != "evolution") {
+            event.stopPropagation();
+            return;
+        }
         $("#laurazia, #gondvana, #ocean").css("border", "0px");
             if (active == event.currentTarget.id) {
                 event.currentTarget.style.border = "0px";
@@ -114,9 +120,6 @@ $(document).ready(function() {
                 $("#laurazia").css("height", "1000px");
                 $("#laurazia").css("margin", "0");
                 $("#laurazia").children().css("opacity", "1");
-                window.setTimeout(() => {
-                    $("#laurazia").children().css("display", "flex");
-                }, 300);
                 continent = "laurazia";
             }
             else {
@@ -128,9 +131,6 @@ $(document).ready(function() {
                 $("#laurazia").css("margin-left", "10%");
                 $("#laurazia").css("margin-top", "3%");
                 $("#laurazia").children().css("opacity", "0");
-                window.setTimeout(() => {
-                    $("#laurazia").children().css("display", "none");
-                }, 1500);
                 $("#gondvana").css("display", "flex");
                 $("#ocean").css("display", "flex");
                 continent = null;
@@ -147,9 +147,6 @@ $(document).ready(function() {
             $("#gondvana").css("height", "1000px");
             $("#gondvana").css("margin", "0");
             $("#gondvana").children().css("opacity", "1");
-            window.setTimeout(() => {
-                $("#gondvana").children().css("display", "flex");
-            }, 300);
             continent = "gondvana";
         }
         else {
@@ -161,9 +158,6 @@ $(document).ready(function() {
             $("#gondvana").css("margin-left", "10%");
             $("#gondvana").css("margin-bottom", "3%");
             $("#gondvana").children().css("opacity", "0");
-            window.setTimeout(() => {
-                $("#gondvana").children().css("display", "none");
-            }, 1500);
             $("#laurazia").css("display", "flex");
             $("#ocean").css("display", "flex");
             continent = null;
@@ -180,9 +174,6 @@ $(document).ready(function() {
             $("#ocean").css("height", "1000px");
             $("#ocean").css("margin", "0");
             $("#ocean").children().css("opacity", "1");
-            window.setTimeout(() => {
-                $("#ocean").children().css("display", "flex");
-            }, 300);
             continent = "ocean";
         }
         else {
@@ -194,9 +185,6 @@ $(document).ready(function() {
             $("#ocean").css("margin-left", "10%");
             $("#ocean").css("margin-bottom", "3%");
             $("#ocean").children().css("opacity", "0");
-            window.setTimeout(() => {
-                $("#ocean").children().css("display", "none");
-            }, 1500);
             $("#laurazia").css("display", "flex");
             $("#gondvana").css("display", "flex");
             continent = null;
@@ -214,7 +202,7 @@ $(document).ready(function() {
                 if (a == null || a > 8 || a < 2 || isNaN(a))
                     window.alert("Нельзя взять такое количество людей!");
                 else
-                    flag = true;
+                    flag = true;    
             }
             socket.send(JSON.stringify({event: "room size", size: Number(a)}));
             break;
@@ -271,17 +259,26 @@ $(document).ready(function() {
             $("#laurazia").css("display", "flex");
             $("#ocean").css("display", "flex");
             $("#gondvana").css("display", "flex");
+            $("*").css("border", "0px");
+            active = null;
+            target = null;
             $("#viewt").css("display", "block");
             if (phase != data.phase) {
                 phase = data.phase;
                 window.alert(`Фаза ${data.phase == "evolution" ? 'эволюции' : 'кормления'}`);
                 if (data.phase == "alimentation") {
-                    for (let i = 0; i < laurazia.entities.length; i++)
+                    for (let i = 0; i < laurazia.entities.length; i++) {
                         laurazia.entities[i].starvation = laurazia.entities[i].necFood;
-                    for (let i = 0; i < gondvana.entities.length; i++)
+                        $("#" + laurazia.entities[i].id).children(".e_food").text(`${laurazia.entities[i].necFood - laurazia.entities[i].starvation}/${laurazia.entities[i].necFood}`);
+                    }
+                    for (let i = 0; i < gondvana.entities.length; i++) {
                         gondvana.entities[i].starvation = gondvana.entities[i].necFood;
-                    for (let i = 0; i < ocean.entities.length; i++)
+                        $("#" + gondvana.entities[i].id).children(".e_food").text(`${gondvana.entities[i].necFood - gondvana.entities[i].starvation}/${gondvana.entities[i].necFood}`);
+                    }
+                    for (let i = 0; i < ocean.entities.length; i++) {
                         ocean.entities[i].starvation = ocean.entities[i].necFood;
+                        $("#" + ocean.entities[i].id).children(".e_food").text(`${ocean.entities[i].necFood - ocean.entities[i].starvation}/${ocean.entities[i].necFood}`);
+                    }
                     $("#viewt").val("Подтвердить");
                     $(".e_food").css("display", "block");
                 }
@@ -310,10 +307,16 @@ $(document).ready(function() {
             break;
         /* growing all plants */
         case "grow":
-            for (let i = 0; i < laurazia.plants.length; i++)
+            for (let i = 0; i < laurazia.plants.length; i++) {
                 base.grow(laurazia.plants[i]);
-            for (let i = 0; i < gondvana.plants.length; i++)
+                $("#" + laurazia.plants[i].id).html(`<div class = "p_name">${gondvana.plants[i].name} &nbsp&nbsp <p class = "food">${laurazia.plants[i].food}/${laurazia.plants[i].maxFood}<p class = "shield">${laurazia.plants[i].shield}/${laurazia.plants[i].maxShield}</p></p></div>` + 
+                    `<div class = "p_description></div>"`);
+            }
+            for (let i = 0; i < gondvana.plants.length; i++) {
                 base.grow(gondvana.plants[i]);
+                $("#" + gondvana.plants[i].id).html(`<div class = "p_name">${gondvana.plants[i].name} &nbsp&nbsp <p class = "food">${gondvana.plants[i].food}/${gondvana.plants[i].maxFood}<p class = "shield">${gondvana.plants[i].shield}/${gondvana.plants[i].maxShield}</p></p></div>` + 
+                    `<div class = "p_description></div>"`);
+            }
             break;
         case "new property":
             let entity = null;
@@ -328,10 +331,6 @@ $(document).ready(function() {
                 for (let i = 0; i < ocean.entities.length; i++)
                     if (ocean.entities[i].id == '_' + data.id)
                         entity = ocean.entities[i];
-            if (entity.internals[data.card.prop.name] == true) {
-                window.alert("У выбранного животного уже есть это свойство!");
-                return;
-            }
             entity.internals[data.card.prop.name] = data.card.prop.value;
             entity.necFood += data.card.addStarv;
             if (data.card.prop.name == "carnivorous")
@@ -364,35 +363,43 @@ function createEnt(entity, type) {
         e.html(`<p class = "owner">${entity.owner}</p>`)
         e.appendTo("#" + entity.continent[0] + "_entities");
         e.dblclick((event) => {
+            if (continent == null)
+                return;
             if (flag) {
+                $("#" + event.currentTarget.id).children().css("transition", "scaleX 1.5s");
                 event.currentTarget.style.transform = "rotateY(0deg)";
+                $("#" + event.currentTarget.id).children().css("transform", "scaleX(1)");
                 flag = false;
             }
             else {
+                $("#" + event.currentTarget.id).children().css("transition", "scaleX 1.5s");
                 event.currentTarget.style.transform = "rotateY(-180deg)";
+                $("#" + event.currentTarget.id).children().css("transform", "scaleX(-1)");
                 flag = true;
             }
             event.stopPropagation();
         });
         e.click((event) => {
+            if (continent == null)
+                return;
             if (phase == "alimentation" && active != null) {
                 let ent1 = null, ent2 = null;
                 for (let i = 0; i < laurazia.entities.length; i++)
                     if (event.currentTarget.id == laurazia.entities[i].id)
                         ent2 = laurazia.entities[i];
-                    if (active == laurazia.entities[i].id)
+                    else if (active == laurazia.entities[i].id)
                         ent1 = laurazia.entities[i];
                 if (ent1 == null || ent2 == null)
                     for (let i = 0; i < gondvana.entities.length; i++)
                         if (event.currentTarget.id == gondvana.entities[i].id)
                             ent2 = gondvana.entities[i];
-                        if (active == gondvana.entities[i].id)
+                        else if (active == gondvana.entities[i].id)
                             ent1 = gondvana.entities[i];
                 if (ent1 == null || ent2 == null)
                     for (let i = 0; i < ocean.entities.length; i++)
                         if (event.currentTarget.id == ocean.entities[i].id)
                             ent2 = ocean.entities[i];
-                        if (active == ocean.entities[i].id)
+                        else if (active == ocean.entities[i].id)
                             ent1 = ocean.entities[i];
                 if (ent1 != null && ent2 != null) {
                     if (ent1.internals["carnivorous"] != true) {
@@ -405,8 +412,8 @@ function createEnt(entity, type) {
                     else
                         window.alert("Нельзя атаковать это животное!");
                     }
-                event.stopPropagation();
             }
+            event.stopPropagation();
         });
     }
     else if (type == "entity") {
@@ -415,21 +422,25 @@ function createEnt(entity, type) {
         e.appendTo("#" + entity.continent[0] + "_entities");
         myid.push(entity.id);
         e.dblclick((event) => {
+            if (continent == null)
+                return;
             if (flag) {
-                event.currentTarget.children().style.transition = "scaleY 1.5s";
+                $("#" + event.currentTarget.id).children().css("transition", "scaleX 1.5s");
                 event.currentTarget.style.transform = "rotateY(0deg)";
-                event.currentTarget.children().style.transform = "scaleY(1)";
+                $("#" + event.currentTarget.id).children().css("transform", "scaleX(1)");
                 flag = false;
             }
             else {
-                event.currentTarget.children().style.transition = "scaleY 1.5s";
+                $("#" + event.currentTarget.id).children().css("transition", "scaleY 1.5s");
                 event.currentTarget.style.transform = "rotateY(-180deg)";
-                event.currentTarget.children().style.transform = "scaleY(-1)";
+                $("#" + event.currentTarget.id).children().css("transform", "scaleX(-1)");
                 flag = true;
             }
             event.stopPropagation();
         });
         e.click((event) => {
+            if (continent == null)
+                return;
             let ind = myid.lastIndexOf(event.currentTarget.id);
             if (ind == -1 || turn == false) {
                 event.stopPropagation();
@@ -455,6 +466,8 @@ function createEnt(entity, type) {
         e.appendTo("#" + entity.continent[0] + "_plants");
         if (entity.carnivorous == true)
             e.click((event) => {
+                if (event.currentTarget.style.opacity == '0')
+                    return;
                 if (turn == false || phase != "alimentation") {
                     event.preventDefault();
                     return;
@@ -537,6 +550,27 @@ function createCards(cards) {
                 delete cards[i];
             }
             else if (phase == "evolution" && active != null && active[0] == '_' && window.confirm(`Добавить свойство ${cards[i].name}?`)) {
+                for (let k = 0; k < laurazia.entities.length; k++) {
+                    if (laurazia.entities[k].id == active)
+                        if (laurazia.entities[k].internals[cards[i].prop.name] == true) {
+                            window.alert("У выбранного животного уже есть это свойство!");
+                            return;
+                        }
+                    }
+                for (let k = 0; k < gondvana.entities.length; k++) {
+                    if (gondvana.entities[k].id == active)
+                        if (gondvana.entities[k].internals[cards[i].prop.name] == true) {
+                            window.alert("У выбранного животного уже есть это свойство!");
+                            return;
+                        }
+                    }
+                for (let k = 0; k < ocean.entities.length; k++) {
+                    if (ocean.entities[k].id == active)
+                        if (ocean.entities[k].internals[cards[i].prop.name] == true) {
+                            window.alert("У выбранного животного уже есть это свойство!");
+                            return;
+                        }
+                    }
                 $("#table").css("top", "-1000px");
                 $("#viewt").val("карты");
                 c.remove();

@@ -82,7 +82,8 @@ export async function processmsg(wssa, ws, msg) {
 
             /* set new phase and leader, reset 'ready' status */
             phase = (phase + 1) % 4;
-            liderind = (liderind + 1) % noofu;
+            if (phase == 0)
+                liderind = (liderind + 1) % noofu;
             moveind = liderind;
             for (let user of users)
                 user.ready = false;
@@ -135,11 +136,14 @@ export async function processmsg(wssa, ws, msg) {
             sendAll({event: "remove property", id: msg.id, prop: msg.card.prop.name})
         }
         break;
-    case "eat":
-        sendAll({event: "death", entity: msg.entity, target: msg.target});
-        break;
-    case "death":
-        addPlantity("deathQueue", msg.type, msg.data);
+    case "kill":
+        let ent = getPlantity(msg.entity);
+        sendAll({event: "kill", entity: '_' + msg.entity, target: '_' + msg.target, curstarvation: msg.curstarvation});
+        if (ent != undefined && ent != null) {
+            ent.starvation = msg.curstarvation;
+            changePlantity(msg.entity, "entity", ent, "change");
+        }
+        changePlantity(msg.target, "entity", null, "remove");
         break;
     }
 }
@@ -217,12 +221,15 @@ async function cyclef() {
             /* start alimentation gamers movecycle */
             sendAll({event: "move", name: users[liderind].name, phase: "alimentation"});
             break;
-        /* axtincion phase */
+        /* extincion phase */
         case "extincion":
-            /* clearing deathQueue */
-            for (let dead of deathQueue)
-                sendAll({event: "death", id: dead.id});
-            deathQueue = [];
+            sendAll({event: "extincion"});
+            phase = 0;
+            liderind = (liderind + 1) % noofu;
+            moveind = liderind;
+            for (let user of users)
+                user.ready = false;
+            cyclef();
             break;
         }
 }
@@ -231,9 +238,9 @@ function sendAll(msgobj) {
     for (let client of wss.clients)
         client.send(JSON.stringify(msgobj));
 }
-function getPlantity(pid) {
-    for (let plantity of collection.find({id: pid}))
-        return plantity;
+async function getPlantity(pid) {
+    for await (let plantity of collection.find({id: pid}))
+        return plantity.data;
 }
 async function changePlantity(pid, type, data, move) {
     if (move == "change") 

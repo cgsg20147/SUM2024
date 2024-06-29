@@ -142,6 +142,7 @@ body {
     font-family: "Gluten", cursive;
     z-index: 1;
     color: bisque;
+    word-wrap: break-word;
 }
 #readyb {
     font-size: 100px;
@@ -237,6 +238,7 @@ body {
     text-align: center;
     position: absolute;
     font-weight: bold;
+    background-color: firebrick;
     top: 200px;
     right: 50px;
     display: none;
